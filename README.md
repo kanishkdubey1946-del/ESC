@@ -12,7 +12,7 @@
 
 ## 📌 Overview
 
-**COMET** is an AI-powered system that helps students learn more effectively by analyzing their performance and generating **personalized study plans and curated learning resources**.
+**ESC** is an AI-powered system that helps students learn more effectively by analyzing their performance and generating **personalized study plans and curated learning resources**.
 
 Instead of one-size-fits-all learning, COMET adapts continuously using a simple but powerful loop:
 
