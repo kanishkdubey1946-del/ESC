@@ -84,7 +84,7 @@ cp .env.example .env   # Windows: copy .env.example .env
 Set your key in `backend/.env`:
 
 ```env
-OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=
 ```
 
 Start the API:
