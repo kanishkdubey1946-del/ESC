@@ -2,7 +2,7 @@
 
 > **Problem Statement:** AI Personalized Learning Assistant — recommend study plans and learning resources based on student performance.
 
-**COMET** solves this with a **Student Orchestrator**: a team of specialized AI agents that turn a single student's goals, materials, and performance signals into a personalized study plan, curated resources, and ongoing exam-readiness insight — all inside one unified workspace instead of scattered across separate chat tools.
+**ESC** solves this with a **Student Orchestrator**: a team of specialized AI agents that turn a single student's goals, materials, and performance signals into a personalized study plan, curated resources, and ongoing exam-readiness insight — all inside one unified workspace instead of scattered across separate chat tools.
 
 ---
 
