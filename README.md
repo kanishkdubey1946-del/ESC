@@ -55,25 +55,6 @@ Each agent consumes the shared workspace context built up by the agents before i
 | Research   | Backend web retrieval with source quality filtering      |
 | Exports    | `docx`, `jspdf`, `pptxgenjs` on the frontend              |
 
----
-
-## 📁 Repository Layout
-
-```
-ESC/
-├── backend/           # FastAPI API, research engine, OpenAI client
-│   └── app/
-│       ├── main.py            # Auth, agent-run, research & source-extraction routes
-│       ├── research_engine.py # Web retrieval & source scoring
-│       └── openai_client.py   # Server-side LLM calls
-├── frontend/           # React SPA
-│   └── src/
-│       ├── lib/modeAgents.ts          # Student / Business / Playground agent definitions
-│       └── components/report/         # Agent output rendering & student experiences
-├── project-brain/     # Architecture notes, standards, and agent docs
-├── PRD.md             # Full product requirements
-├── AGENTS.md          # Backend/agent platform notes
-└── README.md
 ```
 
 ---
@@ -221,7 +202,3 @@ Contributions are welcome — see `PRD.md` and `project-brain/standards/` for ar
 ## 📄 License
 
 Private / project-specific unless otherwise stated by the repository owner.
-
-## 🔗 Repository
-
-[https://github.com/aDiii1633/ESC](https://github.com/aDiii1633/ESC)
