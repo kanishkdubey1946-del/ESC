@@ -1,5 +1,5 @@
 # ESC
-# 🚀 COMET — AI Personalized Learning Assistant
+# 🚀 ESC - Enhanced Study Companion — AI Personalized Learning Assistant
 
 ![Build](https://img.shields.io/badge/build-passing-brightgreen)
 ![Tests](https://img.shields.io/badge/tests-passing-blue)
