@@ -1,0 +1,99 @@
+# ─── Environment & secrets (never commit) ───────────────────────────────────
+.env
+.env.*
+!.env.example
+!**/.env.example
+*.pem
+*.key
+secrets/
+credentials/
+
+# ─── Python ─────────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+env/
+ENV/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# ─── Local runtime data ─────────────────────────────────────────────────────
+backend/comet.db
+backend/*.db
+backend/*.db-journal
+*.sqlite
+*.sqlite3
+.cache/
+
+# ─── Node / frontend ────────────────────────────────────────────────────────
+node_modules/
+frontend/node_modules/
+frontend/dist/
+frontend/dist-ssr/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# ─── IDE / editor ───────────────────────────────────────────────────────────
+.idea/
+.vscode/*
+!.vscode/extensions.json
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*~
+
+# ─── OS junk ────────────────────────────────────────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ─── AI agent / tooling local state ─────────────────────────────────────────
+.insforge/
+.agent/
+.agents/
+.augment/
+.claude/
+.cline/
+.github/copilot*
+.kilocode/
+.qoder/
+.qwen/
+.roo/
+.trae/
+.windsurf/
+.grok/
+.cursor/
+.codex/
+
+# ─── Project-brain ephemeral cache (keep structure, ignore session cache) ───
+project-brain/cache/*
+!project-brain/cache/.gitkeep
+
+# ─── Logs & temp ────────────────────────────────────────────────────────────
+logs/
+*.log
+tmp/
+temp/
+*.tmp
+*.temp
