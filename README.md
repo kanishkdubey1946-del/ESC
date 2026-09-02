@@ -194,11 +194,6 @@ Full interactive reference is available at `/docs` once the backend is running.
 - Mobile-friendly dashboard
 
 ---
-
-## 🤝 Contributing
-
-Contributions are welcome — see `PRD.md` and `project-brain/standards/` for architecture and coding standards before opening a PR.
-
 ## 📄 License
 
 Private / project-specific unless otherwise stated by the repository owner.
