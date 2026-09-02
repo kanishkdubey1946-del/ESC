@@ -1,284 +1,227 @@
-# ESC
-# 🚀 ESC - Enhanced Study Companion — AI Personalized Learning Assistant
+# 🌠 COMET — AI Personalized Learning Assistant
 
-![Build](https://img.shields.io/badge/build-passing-brightgreen)
-![Tests](https://img.shields.io/badge/tests-passing-blue)
-![License](https://img.shields.io/badge/license-MIT-yellow)
+> **Problem Statement:** AI Personalized Learning Assistant — recommend study plans and learning resources based on student performance.
 
-> **AI Personalized Learning Assistant**
-> Recommends study plans and learning resources based on student performance.
+**COMET** solves this with a **Student Orchestrator**: a team of specialized AI agents that turn a single student's goals, materials, and performance signals into a personalized study plan, curated resources, and ongoing exam-readiness insight — all inside one unified workspace instead of scattered across separate chat tools.
 
 ---
 
 ## 📌 Overview
 
-**ESC** is an AI-powered system that helps students learn more effectively by analyzing their performance and generating **personalized study plans and curated learning resources**.
-
-Instead of one-size-fits-all learning, COMET adapts continuously using a simple but powerful loop:
+Studying with generic AI chat tools means repeating context over and over: pasting your notes into one chat for summaries, another for a study plan, another for exam tips. COMET fixes this by keeping a single shared context per student and routing it through purpose-built agents, each responsible for one part of the learning workflow:
 
 ```
-Test → Analyze → Recommend → Learn → Re-test
+Materials & Goals → StudyVault → ExamInsight → SuccessArchitect → GuideMinds / SpecialistHub
+      (organize)      (analyze)      (plan)          (mentor / solve)
 ```
 
-This ensures every student gets a learning path tailored to their strengths and weaknesses.
+COMET also ships a **Business Orchestrator** mode (market research, strategy, pitch decks) and an **Agent Playground** for 1:1 specialist chat, built on the same underlying platform — but this README focuses on the learning-assistant experience.
 
 ---
 
 ## ✨ Features
 
-* 📊 **Performance-Based Personalization**
-
-  * Adapts study plans based on student scores
-
-* 🧠 **Learning Memory**
-
-  * Tracks progress, weak topics, and time spent
-
-* 📅 **Dynamic Study Plans**
-
-  * Generates daily/weekly learning schedules
-
-* 📚 **Smart Resource Recommendations**
-
-  * Suggests videos, articles, PDFs, and practice questions
-
-* 📝 **Quiz & Evaluation System**
-
-  * MCQ-based testing for continuous feedback
-
-* 🔁 **Adaptive Feedback Loop**
-
-  * Improves recommendations over time
+- 🧠 **Student Orchestrator** — a coordinated pipeline of learning agents instead of one generic chatbot
+- 📚 **StudyVault** — personal study library and knowledge organization for uploaded notes, syllabi, and materials
+- 📊 **ExamInsight** — exam preparation and performance intelligence; surfaces weak areas from what you feed it
+- 🗓️ **SuccessArchitect** — turns performance insight into a concrete, scheduled study plan
+- 💡 **GuideMinds** — a personal study mentor for guidance, motivation, and study strategy
+- 🧪 **SpecialistHub** — multi-subject expert for problem-solving across topics
+- 📎 **Source intelligence** — web research, quality-scored citations, and uploaded file support (PDF, DOCX, and more)
+- 🔒 **Secure AI path** — OpenAI credentials stay server-side; the browser never talks to the model provider directly
+- 📤 **Export** — download consolidated study plans and outputs as Markdown/PDF/DOCX
 
 ---
 
 ## 🏗️ How It Works
 
 ```
-        Student
-           ↓
-        Takes Quiz
-           ↓
-     Performance Analysis
-           ↓
-   Identify Weak Topics
-           ↓
- Generate Study Plan + Resources
-           ↓
-        Learning
-           ↓
-        Re-test
+Student → Upload materials / goals → StudyVault organizes → ExamInsight analyzes performance
+        → SuccessArchitect builds a study plan → GuideMinds / SpecialistHub assist along the way
+        → Export plan & resources → Re-engage as performance updates
+```
+
+Each agent consumes the shared workspace context built up by the agents before it, so a weak topic surfaced by ExamInsight automatically shapes the plan SuccessArchitect generates — no re-explaining yourself between tools.
+
+---
+
+## 🧱 Tech Stack
+
+| Layer      | Technology                                             |
+|------------|---------------------------------------------------------|
+| Frontend   | React 19, TypeScript, Vite, Tailwind CSS                |
+| Backend    | FastAPI (Python), SQLite for local auth/sessions        |
+| AI         | OpenAI API (optional OpenRouter fallback)                |
+| Research   | Backend web retrieval with source quality filtering      |
+| Exports    | `docx`, `jspdf`, `pptxgenjs` on the frontend              |
+
+---
+
+## 📁 Repository Layout
+
+```
+COMET/
+├── backend/           # FastAPI API, research engine, OpenAI client
+│   └── app/
+│       ├── main.py            # Auth, agent-run, research & source-extraction routes
+│       ├── research_engine.py # Web retrieval & source scoring
+│       └── openai_client.py   # Server-side LLM calls
+├── frontend/           # React SPA
+│   └── src/
+│       ├── lib/modeAgents.ts          # Student / Business / Playground agent definitions
+│       └── components/report/         # Agent output rendering & student experiences
+├── project-brain/     # Architecture notes, standards, and agent docs
+├── PRD.md             # Full product requirements
+├── AGENTS.md          # Backend/agent platform notes
+└── README.md
 ```
 
 ---
 
 ## ⚡ Quickstart
 
-### 1. Clone Repository
+### Prerequisites
+- **Node.js** 20+
+- **Python** 3.11+ (3.12–3.14 tested locally)
+- An **OpenAI API key**
+
+### 1. Backend
 
 ```bash
-git clone https://github.com/your-username/comet.git
-cd comet
-```
+cd backend
+python -m venv .venv
 
-### 2. Install Dependencies
+# Windows
+.venv\Scripts\activate
+# macOS / Linux
+# source .venv/bin/activate
 
-```bash
 pip install -r requirements.txt
+cp .env.example .env   # Windows: copy .env.example .env
 ```
 
-### 3. Run the Application
+Set your key in `backend/.env`:
+
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+Start the API:
 
 ```bash
-uvicorn src.app:app --reload
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-App will run on:
+- Health check: http://127.0.0.1:8000/health
+- API docs: http://127.0.0.1:8000/docs
 
-```
-http://localhost:8000
-```
-
----
-
-## 🐳 Run with Docker
+### 2. Frontend
 
 ```bash
-docker build -t comet .
-docker run -p 8000:8000 comet
+cd frontend
+npm install
+cp .env.example .env.local   # optional; defaults to http://localhost:8000
+npm run dev
 ```
 
----
+App: http://127.0.0.1:5173
 
-## ⚙️ Configuration
-
-Set environment variables:
-
-| Variable       | Description          |
-| -------------- | -------------------- |
-| OPENAI_API_KEY | API key for AI model |
-| LLM_PROVIDER   | openai / anthropic   |
-| DATABASE_URL   | sqlite:///comet.db   |
-
-Example:
+### 3. Production build (frontend)
 
 ```bash
-export OPENAI_API_KEY=your_api_key
-export LLM_PROVIDER=openai
+cd frontend
+npm run build
+npm run preview
 ```
 
 ---
 
-## 📡 Usage
+## ⚙️ Environment Variables
 
-### 1. Create a Student
+### Backend (`backend/.env`) — secrets stay here
+
+| Variable | Required | Description |
+|---|---|---|
+| `OPENAI_API_KEY` | Yes* | OpenAI API key (*or configure OpenRouter) |
+| `OPENAI_DEFAULT_MODEL` | No | Default model (e.g. `gpt-4o-mini`) |
+| `OPENAI_FAST_MODEL` | No | Fast path model |
+| `OPENAI_REASONING_MODEL` | No | Heavier reasoning model |
+| `OPENAI_FALLBACK_MODEL` | No | Fallback if primary model fails |
+| `TAVILY_API_KEY` / `BRAVE_API_KEY` / `SERPER_API_KEY` | No | Optional paid search providers |
+| `COMET_DATABASE_PATH` | No | SQLite path for local auth |
+
+See `backend/.env.example` for the full template. **Never commit real `.env` files.**
+
+### Frontend (`frontend/.env.local`)
+
+| Variable | Required | Description |
+|---|---|---|
+| `VITE_API_BASE_URL` | No | Backend base URL (default `http://localhost:8000`) |
+
+Do **not** put OpenAI keys in `VITE_*` variables.
+
+---
+
+## 📡 Core API Endpoints
 
 ```bash
-curl -X POST http://localhost:8000/user \
--H "Content-Type: application/json" \
--d '{"name": "John"}'
+# Register / login
+POST /api/auth/register
+POST /api/auth/login
+
+# Run a student agent (e.g. examinsight, successarchitect)
+POST /api/v1/agents/run
+
+# Research a topic with cited web sources
+POST /api/v1/research/run
+POST /api/v1/research/stream   # streamed version
+
+# Extract content from uploaded study materials
+POST /api/v1/sources/extract
+POST /api/v1/sources/website
 ```
+
+Full interactive reference is available at `/docs` once the backend is running.
 
 ---
 
-### 2. Submit Quiz
+## 🔐 Security Notes
 
-```bash
-curl -X POST http://localhost:8000/quiz \
--H "Content-Type: application/json" \
--d '{"user_id": 1, "answers": [1,2,3,4]}'
-```
-
----
-
-### 3. Generate Study Plan
-
-```bash
-curl http://localhost:8000/plan/1
-```
+- All LLM and search credentials are backend-only.
+- Errors are sanitized so keys are never returned to the client.
+- Local SQLite stores auth sessions — use strong passwords and HTTPS in production.
+- Rotate any key that was ever pasted into chat or logs.
 
 ---
 
-### 4. Get Learning Resources
+## 🎥 Demo Flow
 
-```bash
-curl http://localhost:8000/resources/1
-```
-
----
-
-### Python Example
-
-```python
-import requests
-
-response = requests.get("http://localhost:8000/plan/1")
-print(response.json())
-```
-
----
-
-## 🧠 Personalization Model
-
-COMET stores and updates student performance over time.
-
-### Example Student Data
-
-```json
-{
-  "user_id": 1,
-  "scores": [60, 75, 80],
-  "weak_topics": ["Algebra", "Physics"],
-  "time_spent": 150
-}
-```
-
----
-
-## 📁 Project Structure
-
-```
-COMET/
-│── src/              # Backend API
-│── agents/           # Logic for planning, evaluation, recommendation
-│── examples/         # Sample quizzes and data
-│── tests/            # Unit tests
-│── requirements.txt
-│── Dockerfile
-│── README.md
-```
-
----
-
-## 🎥 Demo Walkthrough (2–3 Minutes)
-
-1. Create a student
-2. Run a quiz
-3. Show identified weak topics
-4. Generate personalized study plan
-5. Display recommended learning resources
+1. Sign in and open a new Student workspace
+2. Upload notes/syllabus or describe recent performance
+3. StudyVault organizes materials → ExamInsight flags weak topics
+4. SuccessArchitect generates a scheduled study plan
+5. Chat with GuideMinds or SpecialistHub to work through sticking points
+6. Export the plan and resources
 
 ---
 
 ## 🛣️ Roadmap
 
-* 📱 Web dashboard UI
-* 🎤 Voice-based tutor
-* 📈 Advanced analytics
-* 🌐 Integration with real learning platforms
+- Deeper performance analytics across repeated quizzes/tests
+- Spaced-repetition scheduling in SuccessArchitect
+- Additional resource providers beyond web search
+- Mobile-friendly dashboard
 
 ---
 
 ## 🤝 Contributing
 
-Contributions are welcome!
-Please read `CONTRIBUTING.md` for guidelines.
-
----
+Contributions are welcome — see `PRD.md` and `project-brain/standards/` for architecture and coding standards before opening a PR.
 
 ## 📄 License
 
-MIT License
+Private / project-specific unless otherwise stated by the repository owner.
 
----
+## 🔗 Repository
 
-## 🙌 Acknowledgements
-
-Built for hackathons, students, and the future of personalized education 🚀
-
----
-
-## ⚡ 60-Second Demo Script
-
-* “This is COMET, an AI-powered personalized learning assistant.”
-* “Student takes a quiz.”
-* “System identifies weak topics automatically.”
-* “Generates a personalized study plan.”
-* “Recommends resources tailored to the student.”
-* “As the student improves, the system adapts.”
-
----
-
-## 📄 Hackathon Summary
-
-COMET is an AI Personalized Learning Assistant that recommends study plans and learning resources based on student performance. Traditional learning systems treat all students the same, but COMET adapts dynamically to each individual.
-
-The system evaluates student performance through quizzes, identifies weak areas, and generates targeted study plans. It also recommends curated learning resources such as videos, articles, and practice problems.
-
-A feedback loop (Test → Analyze → Recommend → Learn → Re-test) ensures continuous improvement and personalization. Over time, the system builds a memory of student progress, making recommendations smarter and more effective.
-
-COMET is built using Python, FastAPI, and modern AI models, making it scalable and easy to extend. It can be used by students, educators, or integrated into educational platforms.
-
----
-
-## 🏆 Why This Wins
-
-* 🎯 Solves real problem: personalized learning
-* 🔁 Continuous improvement via feedback loop
-* 📊 Data-driven recommendations
-* 🧠 Adapts to each student individually
-* 🚀 More effective than static or generic learning tools
-
----
-
-If you want, I can also generate a ready-to-paste GitHub Actions CI workflow file and a sample Docker Compose for local demo—say **"generate CI & docker-compose"**.
+[https://github.com/aDiii1633/COMET](https://github.com/aDiii1633/COMET)
