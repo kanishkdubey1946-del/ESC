@@ -93,8 +93,6 @@ Start the API:
 python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
-- Health check: http://127.0.0.1:8000/health
-- API docs: http://127.0.0.1:8000/docs
 
 ### 2. Frontend
 
@@ -105,7 +103,7 @@ cp .env.example .env.local   # optional; defaults to http://localhost:8000
 npm run dev
 ```
 
-App: http://127.0.0.1:5173
+
 
 ### 3. Production build (frontend)
 
