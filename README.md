@@ -8,14 +8,14 @@
 
 ## 📌 Overview
 
-Studying with generic AI chat tools means repeating context over and over: pasting your notes into one chat for summaries, another for a study plan, another for exam tips. COMET fixes this by keeping a single shared context per student and routing it through purpose-built agents, each responsible for one part of the learning workflow:
+Studying with generic AI chat tools means repeating context over and over: pasting your notes into one chat for summaries, another for a study plan, another for exam tips. ESC fixes this by keeping a single shared context per student and routing it through purpose-built agents, each responsible for one part of the learning workflow:
 
 ```
 Materials & Goals → StudyVault → ExamInsight → SuccessArchitect → GuideMinds / SpecialistHub
       (organize)      (analyze)      (plan)          (mentor / solve)
 ```
 
-COMET also ships a **Business Orchestrator** mode (market research, strategy, pitch decks) and an **Agent Playground** for 1:1 specialist chat, built on the same underlying platform — but this README focuses on the learning-assistant experience.
+ESC also ships a **Business Orchestrator** mode (market research, strategy, pitch decks) and an **Agent Playground** for 1:1 specialist chat, built on the same underlying platform — but this README focuses on the learning-assistant experience.
 
 ---
 
@@ -60,7 +60,7 @@ Each agent consumes the shared workspace context built up by the agents before i
 ## 📁 Repository Layout
 
 ```
-COMET/
+ESC/
 ├── backend/           # FastAPI API, research engine, OpenAI client
 │   └── app/
 │       ├── main.py            # Auth, agent-run, research & source-extraction routes
@@ -148,7 +148,7 @@ npm run preview
 | `OPENAI_REASONING_MODEL` | No | Heavier reasoning model |
 | `OPENAI_FALLBACK_MODEL` | No | Fallback if primary model fails |
 | `TAVILY_API_KEY` / `BRAVE_API_KEY` / `SERPER_API_KEY` | No | Optional paid search providers |
-| `COMET_DATABASE_PATH` | No | SQLite path for local auth |
+| `ESC_DATABASE_PATH` | No | SQLite path for local auth |
 
 See `backend/.env.example` for the full template. **Never commit real `.env` files.**
 
@@ -224,4 +224,4 @@ Private / project-specific unless otherwise stated by the repository owner.
 
 ## 🔗 Repository
 
-[https://github.com/aDiii1633/COMET](https://github.com/aDiii1633/COMET)
+[https://github.com/aDiii1633/ESC](https://github.com/aDiii1633/ESC)
