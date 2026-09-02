@@ -32,7 +32,7 @@ export default function CommandPalette({ onRun, onOpenWorkspace }: CommandPalett
 
   const commands = useMemo<CommandItem[]>(() => [
     { id: 'workspace', label: 'Open agent workspace', hint: 'Navigate to a specialist', icon: LayoutDashboard, action: onOpenWorkspace },
-    { id: 'run', label: 'Run orchestration', hint: 'Start the current business workflow', icon: Play, action: onRun },
+    { id: 'run', label: 'Run orchestration', hint: 'Start the current workflow', icon: Play, action: onRun },
     { id: 'history', label: 'Open execution history', hint: 'Review prior runs', icon: History, action: () => {} },
     { id: 'documents', label: 'Open documents', hint: 'Search workspace knowledge', icon: FileText, action: () => {} },
     { id: 'settings', label: 'Workspace settings', hint: 'Configure this workspace', icon: Settings, action: () => {} },

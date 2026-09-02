@@ -1,7 +1,9 @@
 import type { AgentResult } from '../types/agents';
 import type { SourceRecord } from '../types/sources';
 import type { WorkspaceDocument } from '../lib/workspaceMemory';
+import { authenticatedHeaders } from '../lib/localAuth';
 import { docsToUploads } from './research';
+import { STUDENT_SPECIALIST_LIBRARY } from '../lib/studentSpecialists';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const MAX_RETRIES = 1;
@@ -169,6 +171,81 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
       'Use actual deadlines and student-provided constraints only. Do not invent exam dates or availability. '
       + 'studySchedule/tasks: array of actionable items (string or {task, day, duration}).',
   },
+  conceptclarifier: {
+    role: 'Concept Explanation Teacher',
+    temperature: 0.35,
+    requiredFields: [
+      'executiveSummary', 'relevantConcept', 'explanation', 'examples', 'commonMistakes',
+      'practiceQuestion', 'detailedReport', 'sourcesUsed', 'dataLimitations',
+    ],
+    instructions:
+      'Teach step by step at the student’s stated level. Check likely misconceptions, use an accurate example or analogy, and finish with a short recall question. Return executiveSummary, relevantConcept, explanation, examples, commonMistakes, practiceQuestion, detailedReport, sourcesUsed, and dataLimitations.',
+  },
+  problemsolver: {
+    role: 'Step-by-Step Doubt Solver',
+    temperature: 0.25,
+    requiredFields: [
+      'executiveSummary', 'givenInformation', 'requiredResult', 'relevantConcept', 'formula',
+      'stepByStepSolutions', 'finalAnswer', 'alternativeMethod', 'commonMistakes',
+      'detailedReport', 'sourcesUsed', 'dataLimitations',
+    ],
+    instructions:
+      'Separate givenInformation, requiredResult, relevantConcept, formula, stepByStepSolutions, finalAnswer, alternativeMethod, and commonMistakes. Return detailedReport, sourcesUsed, and dataLimitations when applicable.',
+  },
+  quizforge: {
+    role: 'Quiz & Practice Test Builder',
+    temperature: 0.3,
+    requiredFields: [
+      'executiveSummary', 'questions', 'detailedReport', 'sourcesUsed', 'dataLimitations',
+    ],
+    instructions:
+      'Return structured original-practice questions with exactly four options, correctIndex, explanation, topic, and difficulty. Return executiveSummary, questions, detailedReport, sourcesUsed, and dataLimitations.',
+  },
+  revisioncoach: {
+    role: 'Revision & Recall Coach',
+    temperature: 0.3,
+    requiredFields: [
+      'executiveSummary', 'studySchedule', 'revisionSessions', 'checklist', 'detailedReport', 'dataLimitations',
+    ],
+    instructions:
+      'Create actionable revision activities from the topic and time available. Prefer retrieval practice and short checkpoints over passive rereading. Return executiveSummary, studySchedule, revisionSessions, checklist, detailedReport, and dataLimitations.',
+  },
+  flashcardstudio: {
+    role: 'Flashcard Creator',
+    temperature: 0.35,
+    requiredFields: [
+      'executiveSummary', 'flashcards', 'detailedReport', 'sourcesUsed', 'dataLimitations',
+    ],
+    instructions:
+      'Return structured flashcards with clear front and back content. Keep cards atomic, accurate, concise, and based on supplied material when available. Return executiveSummary, flashcards, detailedReport, sourcesUsed, and dataLimitations.',
+  },
+  mindmapmaker: {
+    role: 'Mind Map & Short Notes Creator',
+    temperature: 0.3,
+    requiredFields: [
+      'executiveSummary', 'mindMap', 'shortNotes', 'detailedReport', 'sourcesUsed', 'dataLimitations',
+    ],
+    instructions:
+      'Return a structured mindMap with a main topic, clear branches, and concise child concepts. Also return executiveSummary, shortNotes, detailedReport, sourcesUsed, and dataLimitations.',
+  },
+  resourcescout: {
+    role: 'Learning Resource Curator',
+    temperature: 0.3,
+    requiredFields: [
+      'executiveSummary', 'resources', 'recommendations', 'detailedReport', 'sourcesUsed', 'dataLimitations',
+    ],
+    instructions:
+      'Prefer relevant uploaded sources first, then reliable cited external sources. Return executiveSummary, resources, recommendations, detailedReport, sourcesUsed, and dataLimitations.',
+  },
+  paperpatternanalyst: {
+    role: 'Previous-Paper & Question Pattern Analyst',
+    temperature: 0.25,
+    requiredFields: [
+      'executiveSummary', 'recurringTopics', 'topicCoverage', 'priorityTopics', 'recommendations', 'detailedReport', 'sourcesUsed', 'dataLimitations',
+    ],
+    instructions:
+      'Analyse only uploaded or properly cited official papers. Return executiveSummary, recurringTopics, topicCoverage, priorityTopics, recommendations, detailedReport, sourcesUsed, and dataLimitations.',
+  },
   guideminds: {
     role: 'Study Mentor Agent',
     temperature: 0.45,
@@ -265,7 +342,7 @@ async function callBackendProxy(
 }> {
   const response = await fetch(`${BACKEND_URL}/api/v1/agents/run`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authenticatedHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       agentId,
       prompt,
@@ -342,8 +419,20 @@ export async function generateAgentResponse(
       ? { dynamicDefinition: options as { name: string; responsibility: string; systemPrompt: string } }
       : (options as GenerateAgentOptions | undefined) || {};
 
+  const cleanId = agentId.replace(/^pg_/, '');
+  const specialist = STUDENT_SPECIALIST_LIBRARY.find(s => s.id === cleanId);
+
   const agent =
+    AGENT_DEFINITIONS[cleanId] ||
     AGENT_DEFINITIONS[agentId] ||
+    (specialist
+      ? {
+          role: specialist.name,
+          instructions: `${specialist.responsibility} ${specialist.systemPrompt}`,
+          requiredFields: ['executiveSummary', 'detailedReport', 'dataLimitations', 'sourcesUsed'],
+          temperature: 0.35,
+        }
+      : undefined) ||
     (normalized.dynamicDefinition
       ? {
           role: normalized.dynamicDefinition.name,

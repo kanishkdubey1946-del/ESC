@@ -645,6 +645,7 @@ export function StudentExperience({ data, sources, onCitationClick, onCopyText, 
   if (id === 'successarchitect') return <SuccessArchitectExperience {...studentProps} />;
   if (id === 'guideminds') return <GuideMindsExperience {...studentProps} />;
   if (id === 'specialisthub') return <SpecialistHubExperience {...studentProps} />;
+  if (id === 'conceptclarifier' || id === 'problemsolver') return <SpecialistHubExperience {...studentProps} />;
 
   const r = asRecord(data);
   const readiness = num(r.examReadinessScore ?? r.readinessScore ?? r.confidenceScore);
@@ -754,7 +755,10 @@ export function resolveAgentExperience(agentId: string): ComponentType<ExpProps>
   if (id === 'content' || id === 'marketing') return ContentExperience;
   if (id === 'development' || id === 'frontend' || id === 'backend' || id === 'product') return DevelopmentExperience;
   if (id === 'pitch' || id === 'presentation') return PitchExperience;
-  if (['studyvault', 'examinsight', 'successarchitect', 'guideminds', 'specialisthub'].includes(id)) {
+  if ([
+    'studyvault', 'examinsight', 'successarchitect', 'guideminds', 'specialisthub',
+    'conceptclarifier', 'problemsolver', 'revisioncoach',
+  ].includes(id)) {
     return function StudentExp(props: ExpProps) {
       return <StudentExperience {...props} agentId={id} />;
     };

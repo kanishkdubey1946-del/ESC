@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, Check, Globe, Loader2, X } from 'lucide-react';
+import { authenticatedHeaders } from '../lib/localAuth';
 import { saveWorkspaceDocument, type WorkspaceDocument } from '../lib/workspaceMemory';
 
 interface WebsiteSourceModalProps {
@@ -52,7 +53,7 @@ export default function WebsiteSourceModal({ isOpen, onClose, onSuccess }: Websi
     try {
       const response = await fetch('http://localhost:8000/api/v1/sources/website', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authenticatedHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ url: url.trim() }),
       });
 

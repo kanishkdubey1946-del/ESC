@@ -64,23 +64,25 @@ export function resolveOutputExperience(ctx: OutputResolveContext): OutputExperi
   // Deliverable shape takes priority over agent id when unambiguous
   if (
     hasArr(r, 'questions', 'mcqs', 'quizQuestions', 'testQuestions')
+    || id === 'quizforge'
     || promptLooksLike(prompt, /mock\s*test|mcq|practice\s*test|jee|neet|quiz|exam practice|chapter test/i)
   ) {
-    if (hasArr(r, 'questions', 'mcqs', 'quizQuestions', 'testQuestions') || id === 'examinsight' || id === 'specialisthub') {
+    if (hasArr(r, 'questions', 'mcqs', 'quizQuestions', 'testQuestions') || ['examinsight', 'specialisthub', 'quizforge'].includes(id)) {
       return 'mock_test';
     }
   }
 
-  if (hasArr(r, 'flashcards', 'cards') || promptLooksLike(prompt, /flash\s*card/i)) {
-    if (hasArr(r, 'flashcards', 'cards')) return 'flashcards';
+  if (hasArr(r, 'flashcards', 'cards') || id === 'flashcardstudio' || promptLooksLike(prompt, /flash\s*card/i)) {
+    if (hasArr(r, 'flashcards', 'cards') || id === 'flashcardstudio') return 'flashcards';
   }
 
   if (
     hasArr(r, 'mindMap', 'mindmap', 'nodes', 'branches')
     || (r.mindMap && typeof r.mindMap === 'object')
+    || id === 'mindmapmaker'
     || promptLooksLike(prompt, /mind\s*map/i)
   ) {
-    if (hasArr(r, 'nodes', 'branches') || (r.mindMap && typeof r.mindMap === 'object') || hasVal(r, 'mindMap', 'mindmap')) {
+    if (id === 'mindmapmaker' || hasArr(r, 'nodes', 'branches') || (r.mindMap && typeof r.mindMap === 'object') || hasVal(r, 'mindMap', 'mindmap')) {
       return 'mind_map';
     }
   }
@@ -88,9 +90,10 @@ export function resolveOutputExperience(ctx: OutputResolveContext): OutputExperi
   if (
     hasArr(r, 'studySchedule', 'dailyPlan', 'weeklyPlan', 'tasks')
     || hasVal(r, 'studyPlan')
+    || id === 'revisioncoach'
     || promptLooksLike(prompt, /study\s*plan|timetable|schedule/i)
   ) {
-    if (id === 'successarchitect' || hasArr(r, 'studySchedule', 'dailyPlan', 'weeklyPlan', 'tasks') || hasVal(r, 'studyPlan')) {
+    if (['successarchitect', 'revisioncoach'].includes(id) || hasArr(r, 'studySchedule', 'dailyPlan', 'weeklyPlan', 'tasks') || hasVal(r, 'studyPlan')) {
       if (!hasArr(r, 'questions', 'mcqs')) return 'study_plan';
     }
   }
@@ -133,7 +136,7 @@ export function resolveOutputExperience(ctx: OutputResolveContext): OutputExperi
   }
 
   // Agent id routes
-  if (id === 'research' || id === 'market' || id === 'data') return 'research';
+  if (['research', 'market', 'data', 'resourcescout', 'paperpatternanalyst'].includes(id)) return 'research';
   if (id === 'strategy' || id === 'operations' || id === 'risk') return 'strategy';
   if (id === 'content' || id === 'marketing' || id === 'brand' || id === 'seo') return 'content';
   if (
@@ -147,7 +150,10 @@ export function resolveOutputExperience(ctx: OutputResolveContext): OutputExperi
   ) {
     return 'development';
   }
-  if (['studyvault', 'examinsight', 'successarchitect', 'guideminds', 'specialisthub'].includes(id)) {
+  if ([
+    'studyvault', 'examinsight', 'successarchitect', 'guideminds', 'specialisthub',
+    'conceptclarifier', 'problemsolver', 'revisioncoach',
+  ].includes(id)) {
     return 'student';
   }
 

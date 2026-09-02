@@ -1,4 +1,5 @@
 import type { ResearchEvent, ResearchResult, SourceRecord } from '../types/sources';
+import { authenticatedHeaders } from '../lib/localAuth';
 import type { WorkspaceDocument } from '../lib/workspaceMemory';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -27,7 +28,7 @@ export async function runResearch(options: {
   try {
     const response = await fetch(`${BACKEND_URL}/api/v1/research/stream`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: authenticatedHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         prompt,
         agentId,
@@ -72,7 +73,7 @@ export async function runResearch(options: {
 
   const response = await fetch(`${BACKEND_URL}/api/v1/research/run`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authenticatedHeaders({ 'Content-Type': 'application/json' }),
     body: JSON.stringify({
       prompt,
       agentId,

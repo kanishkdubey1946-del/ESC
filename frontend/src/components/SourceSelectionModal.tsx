@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UploadCloud, Globe, HardDrive, Type, ArrowLeft, Loader2, CheckCircle2, AlertCircle, FileVideo, Image as ImageIcon } from 'lucide-react';
+import { authenticatedHeaders } from '../lib/localAuth';
 import { saveWorkspaceDocument } from '../lib/workspaceMemory';
 
 type View = 'menu' | 'upload' | 'website' | 'drive' | 'text' | 'youtube' | 'image';
@@ -106,6 +107,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
       try {
         const response = await fetch(`${apiBase}/api/v1/sources/extract`, {
           method: 'POST',
+          headers: authenticatedHeaders(),
           body: form,
         });
         const result = await response.json();
@@ -204,7 +206,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
       
       const response = await fetch('http://localhost:8000/api/v1/sources/website', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: authenticatedHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ url: url.trim() }),
       });
 

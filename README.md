@@ -15,9 +15,11 @@ The student’s authenticated SQLite learning memory owns profiles, uploaded mat
 - `backend/app/routes/student.py` — authenticated `/api/v1/me/...` product API.
 - `backend/app/repositories/student_repository.py` — owner-scoped parameterized persistence adapter.
 - `backend/app/services/` — deterministic quiz validation/scoring, mastery, diagnosis, plans, and resource matching.
-- `frontend/src/components/esc/EscDashboard.tsx` — student-first onboarding and adaptive dashboard.
+- `frontend/src/pages/DashboardLayout.tsx` — query-backed Business, Student, and Playground mode/view routing. Each starts in chat; its marketplace workspace is an explicit secondary view.
+- `frontend/src/lib/studentSpecialists.ts` — the 12 data-driven learning specialists used in Student and Playground marketplaces.
+- `frontend/src/components/esc/EscDashboard.tsx` — student onboarding and adaptive dashboard, opened from the Student workspace action.
 
-Existing COMET business and playground code is retained, but ESC is the user-facing student demo path.
+Business retains its business-specialist chat flow. Student and Playground use the 12 learning-specialist marketplace; Quick Launch opens the existing mode chat with the selected specialist and its suggested prompt. ESC’s adaptive dashboard remains available as the Student workspace rather than replacing the Student chat.
 
 ## Setup
 
@@ -31,7 +33,7 @@ pip install -r requirements.txt
 Copy-Item .env.example .env
 ```
 
-Set `OPENAI_API_KEY` in `backend/.env` only if AI-generated, source-informed questions are required. ESC falls back to clearly labelled original practice items when no provider is configured; it never fabricates prior-year provenance or external citations.
+Set `GEMINI_API_KEY` in `backend/.env` for AI-generated, source-informed questions; Gemini is the preferred configured provider and defaults to `gemini-3.5-flash` (override with `GEMINI_MODEL`). `OPENAI_API_KEY` and `OPENROUTER_API_KEY` remain backend-only fallbacks. ESC falls back to clearly labelled original practice items when no provider is configured; it never fabricates prior-year provenance or external citations.
 
 ```powershell
 # terminal 1

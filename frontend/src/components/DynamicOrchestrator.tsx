@@ -11,6 +11,7 @@ import { agentOutputToText, copyTextToClipboard } from '../utils/agentOutput';
 import AgentOutputModal from './AgentOutputModal';
 import {
   agentsForMode,
+  consumeSpecialistLaunch,
   resolveAgentIdForApi,
   sessionStorageKey,
   type WorkspaceMode,
@@ -73,7 +74,7 @@ const STATUS_COLORS: Record<ExtendedStatus, string> = {
 
 // ─── Component ───────────────────────────────────────────────
 
-export default function DynamicOrchestrator({ mode = 'business' }: { mode?: WorkspaceMode }) {
+export default function DynamicOrchestrator({ mode = 'student' }: { mode?: WorkspaceMode }) {
   const agents = agentsForMode(mode);
   
   const [prompt, setPrompt] = useState('');
@@ -121,6 +122,7 @@ export default function DynamicOrchestrator({ mode = 'business' }: { mode?: Work
   const outputTopRef = useRef<HTMLDivElement>(null);
   const plusRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<{ stop: () => void; abort?: () => void } | null>(null);
+  const voicePromptPrefixRef = useRef('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -191,6 +193,24 @@ export default function DynamicOrchestrator({ mode = 'business' }: { mode?: Work
     skipLocationRef.current = false;
   }, [mode]);
 
+  // A marketplace card can hand off to this existing chat after the workspace
+  // view unmounts. Keep the session intact; only select the requested agent and
+  // prefill its suggested prompt.
+  useEffect(() => {
+    const launch = consumeSpecialistLaunch(mode);
+    if (!launch) return;
+    const modeAgents = agentsForMode(mode);
+    if (!modeAgents.some(agent => agent.id === launch.agentId)) return;
+
+    setOrchestrationMode('manual');
+    setSelectedAgents(new Set([launch.agentId]));
+    setStatuses(Object.fromEntries(
+      modeAgents.map(agent => [agent.id, agent.id === launch.agentId ? 'selected' as ExtendedStatus : 'ready' as ExtendedStatus]),
+    ));
+    setPrompt(launch.prompt);
+    window.setTimeout(() => textareaRef.current?.focus(), 0);
+  }, [mode]);
+
   // Save mode-scoped session (never cross-write other modes)
   useEffect(() => {
     if (Object.keys(outputs).length === 0 && chatLog.length === 0) return;
@@ -247,7 +267,7 @@ export default function DynamicOrchestrator({ mode = 'business' }: { mode?: Work
       dynamicDefinition: agentDef
         ? { name: agentDef.name, responsibility: agentDef.responsibility, systemPrompt: agentDef.systemPrompt }
         : studio
-          ? { name: studio.name, responsibility: studio.responsibility, systemPrompt: studio.responsibility }
+          ? { name: studio.name, responsibility: studio.responsibility, systemPrompt: studio.systemPrompt || studio.responsibility }
           : undefined,
     });
 
@@ -272,9 +292,9 @@ export default function DynamicOrchestrator({ mode = 'business' }: { mode?: Work
     const submitted = (overrideText ?? prompt).trim();
     if (!submitted || running) return;
 
-    // Location-aware gate for local market analysis (business only)
+    // Location-aware gate for local market analysis
     const activeLocation = marketLocationRef.current || marketLocation;
-    const needsLocation = mode === 'business' && /local|nearby|in my (city|area|town)|competitor|gym in|store in|shop in|delhi|mumbai|bangalore|bangaluru|location|nearby market/i.test(submitted);
+    const needsLocation = false;
     if (needsLocation && !activeLocation && !skipLocationRef.current) {
       setShowLocationPrompt(true);
       // Keep composer text until location is resolved so the user does not lose work
@@ -306,24 +326,23 @@ export default function DynamicOrchestrator({ mode = 'business' }: { mode?: Work
         if (agent) agent.dependencies.forEach(dep => { selectedIds.add(dep); addDeps(dep); });
       };
 
-      if (mode === 'student') {
-        selectedIds.add('guideminds');
-        if (/math|calculus|equation|geometry|solve|problem|physics|code|debug/i.test(lower)) selectedIds.add('specialisthub');
-        if (/plan|schedule|timetable|exam in|days left|routine/i.test(lower)) selectedIds.add('successarchitect');
-        if (/exam|syllabus|previous paper|priority|weightage/i.test(lower)) selectedIds.add('examinsight');
-        if (/summary|pdf|notes|chapter|document|revise|revision/i.test(lower)) selectedIds.add('studyvault');
-        if (selectedIds.size === 1) selectedIds.add('specialisthub');
-      } else if (mode === 'playground') {
-        // Dynamic specialist pick from playground registry only
-        const picked = getAgentLibrary().slice(0, 12);
-        selectedIds.add('pg_research');
-        if (/product|app|software|mvp/i.test(lower)) { selectedIds.add('pg_product'); selectedIds.add('pg_frontend'); selectedIds.add('pg_backend'); }
-        if (/market|competitor|startup|business/i.test(lower)) { selectedIds.add('pg_strategy'); selectedIds.add('pg_market'); }
-        if (/brand|campaign|seo|content/i.test(lower)) { selectedIds.add('pg_marketing'); selectedIds.add('pg_brand'); }
-        if (selectedIds.size === 1) selectedIds.add('pg_strategy');
-        // Ensure only ids that exist in playground list
-        const allowed = new Set(picked.map(p => `pg_${p.id}`));
-        Array.from(selectedIds).forEach(id => { if (!allowed.has(id)) selectedIds.delete(id); });
+      if (mode === 'student' || mode === 'playground') {
+        const toModeId = (id: string) => mode === 'playground' ? `pg_${id}` : id;
+        const select = (...ids: string[]) => ids.forEach(id => selectedIds.add(toModeId(id)));
+
+        if (/notes?|pdf|chapter|document|syllabus|summari[sz]e/i.test(lower)) select('studyvault');
+        if (/score|performance|accuracy|weak topic|readiness|result/i.test(lower)) select('examinsight');
+        if (/plan|schedule|timetable|days left|routine|deadline/i.test(lower)) select('successarchitect');
+        if (/explain|concept|understand|what is|why does/i.test(lower)) select('conceptclarifier');
+        if (/math|calculus|equation|geometry|solve|problem|physics|chemistry|numerical/i.test(lower)) select('problemsolver');
+        if (/mcq|quiz|practice test|mock test|test me/i.test(lower)) select('quizforge');
+        if (/revise|revision|active recall|spaced repetition|last.minute/i.test(lower)) select('revisioncoach');
+        if (/flash ?cards?|memor[yi]s[ea]/i.test(lower)) select('flashcardstudio');
+        if (/mind ?map|concept map|formula sheet|short notes/i.test(lower)) select('mindmapmaker');
+        if (/resource|video|lecture|reading|learn from/i.test(lower)) select('resourcescout');
+        if (/previous paper|past paper|paper pattern|recurring topic/i.test(lower)) select('paperpatternanalyst');
+        if (/overwhelm|motivat|focus|procrastin|start studying|study habit/i.test(lower)) select('guideminds');
+        if (selectedIds.size === 0) select('conceptclarifier', 'guideminds');
       } else {
         // Business: start from intent, avoid running every agent
         selectedIds.add('research');
@@ -625,15 +644,20 @@ export default function DynamicOrchestrator({ mode = 'business' }: { mode?: Work
       recognition.interimResults = true;
       recognition.continuous = false;
       recognitionRef.current = recognition;
+      // SpeechRecognition re-sends the whole partial phrase on every event.
+      // Keep the text that existed before recording and replace the live
+      // transcript, rather than appending each interim update.
+      voicePromptPrefixRef.current = prompt.trim();
       setVoiceState('listening');
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       recognition.onresult = (event: any) => {
         let transcript = '';
-        for (let i = event.resultIndex; i < event.results.length; i += 1) {
+        for (let i = 0; i < event.results.length; i += 1) {
           transcript += event.results[i][0].transcript;
         }
         if (transcript) {
-          setPrompt(prev => (prev ? `${prev.trim()} ${transcript.trim()}` : transcript.trim()));
+          const prefix = voicePromptPrefixRef.current;
+          setPrompt(prefix ? `${prefix} ${transcript.trim()}` : transcript.trim());
         }
       };
       recognition.onerror = () => {
@@ -851,17 +875,6 @@ export default function DynamicOrchestrator({ mode = 'business' }: { mode?: Work
             <h2 className="text-[15px] font-semibold text-slate-900 capitalize">{mode} Chat</h2>
             {isStudent && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-violet-600">ACADEMIC</span>}
             {isPlayground && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-600">SANDBOX</span>}
-            {marketLocation && mode === 'business' && (
-              <button
-                type="button"
-                title="Edit market location"
-                onClick={() => { setLocationInput(marketLocation); setShowLocationPrompt(true); }}
-                className="inline-flex max-w-[160px] items-center gap-1 truncate rounded-full border border-primary-100 bg-primary-50 px-2 py-0.5 text-[10px] font-semibold text-primary-700"
-              >
-                <MapPin className="h-3 w-3 shrink-0" />
-                <span className="truncate">{marketLocation}</span>
-              </button>
-            )}
           </div>
           {/* Compact Automatic / Manual — top-right of Business Chat */}
           <div

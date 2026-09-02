@@ -4,6 +4,14 @@ const tokenKey = 'comet-local-session';
 export interface LocalUser { id: string; name: string; email: string; }
 interface AuthResponse { token: string; user: LocalUser; }
 
+/** Build headers for every API endpoint guarded by the local backend session. */
+export function authenticatedHeaders(headers?: HeadersInit): Headers {
+  const next = new Headers(headers);
+  const token = sessionStorage.getItem(tokenKey);
+  if (token) next.set('Authorization', `Bearer ${token}`);
+  return next;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
@@ -30,10 +38,10 @@ export const localAuth = {
     sessionStorage.setItem(tokenKey, response.token);
     return response.user;
   },
-  getCurrentUser: async () => request<LocalUser>('/api/auth/me', { headers: { Authorization: `Bearer ${localAuth.getToken()}` } }),
+  getCurrentUser: async () => request<LocalUser>('/api/auth/me', { headers: authenticatedHeaders() }),
   signOut: async () => {
     const token = localAuth.getToken();
-    try { if (token) await request<void>('/api/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${token}` } }); }
+    try { if (token) await request<void>('/api/auth/logout', { method: 'POST', headers: authenticatedHeaders() }); }
     finally { sessionStorage.removeItem(tokenKey); }
   },
 };

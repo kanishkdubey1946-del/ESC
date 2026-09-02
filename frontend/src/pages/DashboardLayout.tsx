@@ -1,20 +1,24 @@
 import { Suspense, lazy, useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Briefcase, ChevronDown, CircleHelp, GraduationCap,
-  Layers, Loader2, RotateCcw, Settings, UserRound,
+  ArrowLeft, ChevronDown, CircleHelp, FlaskConical,
+  GraduationCap, Layers, LayoutDashboard, Loader2, RotateCcw,
+  Settings, UserRound,
 } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import Sidebar from '../components/Sidebar';
 import { useAuth } from '../auth/AuthProvider';
+import { queueSpecialistLaunch, type MarketplaceSpecialist, type WorkspaceMode } from '../lib/modeAgents';
 import EscDashboard from '../components/esc/EscDashboard';
 
 const DynamicOrchestrator = lazy(() => import('../components/DynamicOrchestrator'));
+const AgentPlayground = lazy(() => import('../components/AgentPlayground'));
 
-type WorkspaceMode = 'business' | 'student' | 'playground';
+type DashboardView = 'chat' | 'workspace';
 
-const MODES: { id: WorkspaceMode; label: string; icon: typeof Briefcase }[] = [
+const MODES: { id: WorkspaceMode; label: string; icon: typeof GraduationCap }[] = [
   { id: 'student', label: 'Student', icon: GraduationCap },
+  { id: 'playground', label: 'Playground', icon: FlaskConical },
 ];
 
 function DashboardLoadingState() {
@@ -180,11 +184,11 @@ function ProfileMenu({
                 <button type="button" className="mb-3 text-xs font-semibold text-primary-700" onClick={() => setPanel('menu')}>← Back</button>
                 <p className="text-sm font-semibold text-slate-900">Settings</p>
                 <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                  Workspace mode preference is saved automatically when you switch Business, Student, or Playground.
+                  Student and Playground open in chat first. Their workspaces are available from the header when you need a specialist catalog or the adaptive student dashboard.
                   Agent outputs and chat history are stored per mode in this browser.
                 </p>
                 <ul className="mt-3 space-y-1.5 text-xs text-slate-600">
-                  <li>• Default mode restores from your last selection</li>
+                  <li>• Student and Playground links keep chat or workspace in the URL</li>
                   <li>• Sources live in the left panel (shared workspace memory)</li>
                   <li>• Use Reset Session to clear mode-scoped runs</li>
                 </ul>
@@ -218,30 +222,48 @@ function ProfileMenu({
 }
 
 export default function DashboardLayout() {
-  const [activeTab, setActiveTab] = useState<WorkspaceMode>('student');
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, signOut } = useAuth();
+  const requestedMode = searchParams.get('mode');
+  const requestedView = searchParams.get('view');
+  const hasSupportedRequestedMode = MODES.some(mode => mode.id === requestedMode);
+  const activeTab: WorkspaceMode = hasSupportedRequestedMode
+    ? requestedMode as WorkspaceMode
+    : 'student';
+  const activeView: DashboardView = hasSupportedRequestedMode && requestedView === 'workspace'
+    ? 'workspace'
+    : 'chat';
+
+  const setDashboardRoute = useCallback((mode: WorkspaceMode, view: DashboardView, replace = false) => {
+    setSearchParams(current => {
+      const next = new URLSearchParams(current);
+      next.set('mode', mode);
+      next.set('view', view);
+      return next;
+    }, { replace });
+  }, [setSearchParams]);
 
   useEffect(() => {
+    // Canonical links make workspace visits intentional while keeping first-time
+    // mode links keep their view shareable while first-time visits use chat.
+    if (requestedMode !== activeTab || requestedView !== activeView) {
+      setDashboardRoute(activeTab, activeView, true);
+    }
     try {
-      localStorage.setItem('comet.activeMode', 'student');
+      localStorage.setItem('comet.activeMode', activeTab);
     } catch {
       // ignore
     }
-  }, []);
+  }, [activeTab, activeView, requestedMode, requestedView, setDashboardRoute]);
 
   const switchMode = (next: WorkspaceMode) => {
-    setActiveTab(next);
-    try {
-      localStorage.setItem('comet.activeMode', next);
-    } catch {
-      // ignore
-    }
+    if (next !== activeTab) setDashboardRoute(next, 'chat');
   };
 
   const resetSession = () => {
     try {
-      ['business', 'student', 'playground'].forEach(mode => {
+      ['student', 'playground'].forEach(mode => {
         localStorage.removeItem(`comet.session.${mode}.v1`);
       });
       localStorage.removeItem('comet.session.v1');
@@ -249,8 +271,7 @@ export default function DashboardLayout() {
     } catch {
       // ignore
     }
-    setActiveTab('student');
-    window.location.reload();
+    window.location.assign(`${window.location.pathname}?mode=student&view=chat`);
   };
 
   const onModeKeyDown = (e: { key: string; preventDefault: () => void }, _id: WorkspaceMode, index: number) => {
@@ -263,6 +284,13 @@ export default function DashboardLayout() {
       el?.focus();
     }
   };
+
+  const workspaceLabel = activeTab === 'student' ? 'Student' : 'Playground';
+  const inWorkspace = activeView === 'workspace';
+  const launchSpecialist = useCallback((specialist: MarketplaceSpecialist) => {
+    queueSpecialistLaunch(activeTab, { agentId: specialist.id, prompt: specialist.tryPrompt });
+    setDashboardRoute(activeTab, 'chat');
+  }, [activeTab, setDashboardRoute]);
 
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#F0F4F8] text-slate-900">
@@ -323,7 +351,16 @@ export default function DashboardLayout() {
         </nav>
 
         {/* RIGHT */}
-        <div className="flex items-center justify-end justify-self-end">
+        <div className="flex items-center justify-end gap-2 justify-self-end">
+          <button
+            type="button"
+            onClick={() => setDashboardRoute(activeTab, inWorkspace ? 'chat' : 'workspace')}
+            className="inline-flex items-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2.5 py-2 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-primary-200 hover:bg-primary-50 hover:text-primary-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 sm:px-3"
+          >
+            {inWorkspace ? <ArrowLeft className="h-3.5 w-3.5" /> : <LayoutDashboard className="h-3.5 w-3.5" />}
+            <span className="hidden sm:inline">{inWorkspace ? 'Back to Chat' : `Open ${workspaceLabel} Workspace`}</span>
+            <span className="sm:hidden">{inWorkspace ? 'Chat' : 'Workspace'}</span>
+          </button>
           <ProfileMenu
             displayName={user?.name || 'COMET User'}
             email={user?.email}
@@ -335,18 +372,24 @@ export default function DashboardLayout() {
       </header>
 
       <div className="flex min-h-0 flex-1 gap-3 overflow-hidden p-3 sm:gap-4 sm:p-4">
-        {activeTab !== 'student' && <Sidebar />}
+        {!inWorkspace && <Sidebar />}
         <Suspense fallback={<DashboardLoadingState />}>
           <AnimatePresence mode="wait">
             <motion.div
-              key={activeTab}
+              key={`${activeTab}-${activeView}`}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -6 }}
               transition={{ duration: 0.18 }}
               className="flex min-w-0 flex-1 gap-4"
             >
-              {activeTab === 'student' ? <EscDashboard /> : <DynamicOrchestrator mode={activeTab} />}
+              {inWorkspace ? (
+                activeTab === 'student' ? <EscDashboard /> : (
+                  <div className="min-w-0 flex-1 overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+                    <AgentPlayground mode={activeTab} onQuickLaunch={launchSpecialist} />
+                  </div>
+                )
+              ) : <DynamicOrchestrator mode={activeTab} />}
             </motion.div>
           </AnimatePresence>
         </Suspense>

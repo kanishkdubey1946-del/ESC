@@ -5,6 +5,7 @@ export type WorkspaceVersion = { id: string; createdAt: string; goal: string; ou
 
 const STORAGE_KEY = 'comet.workspace.v1';
 const MAX_DOCUMENT_TEXT = 45_000;
+const MAX_CONTEXT_PER_DOCUMENT = 3_000;
 
 function read<T>(fallback: T): T {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '') as T; } catch { return fallback; }
@@ -38,5 +39,5 @@ export function saveWorkspaceVersion(goal: string, outputs: Record<string, Agent
 
 export function documentContext(documents: WorkspaceDocument[]) {
   if (!documents.length) return '';
-  return `\n\nUSER-UPLOADED REFERENCE FILES (treat as the primary source when relevant):\n${documents.map(doc => `--- ${doc.name} ---\n${doc.text}`).join('\n\n')}`;
+  return `\n\nUSER-UPLOADED REFERENCE FILES (treat as the primary source when relevant):\n${documents.map(doc => `--- ${doc.name} ---\n${doc.text.slice(0, MAX_CONTEXT_PER_DOCUMENT)}`).join('\n\n')}`;
 }

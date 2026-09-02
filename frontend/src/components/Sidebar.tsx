@@ -1,7 +1,7 @@
-import { BrainCircuit, ExternalLink, FileText, Globe, Layers3, Loader2, Sparkles } from 'lucide-react';
+import { BrainCircuit, FileText, Globe, Layers3, Loader2, Sparkles, Trash2 } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
 import SourceSelectionModal from './SourceSelectionModal';
-import { loadWorkspace, type WorkspaceDocument } from '../lib/workspaceMemory';
+import { loadWorkspace, removeWorkspaceDocument, type WorkspaceDocument } from '../lib/workspaceMemory';
 import type { ResearchEvent, SourceRecord } from '../types/sources';
 import { runResearch } from '../utils/research';
 import { formatSourceDate } from '../utils/sourceDates';
@@ -39,6 +39,20 @@ export default function Sidebar() {
   const loadSources = useCallback(() => {
     setSources(loadWorkspace().documents);
   }, []);
+
+  const handleDeleteDocument = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    removeWorkspaceDocument(id);
+    loadSources();
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleDeleteWebSource = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setWebSources(prev => prev.filter(s => (s.sourceId || s.url) !== id));
+  };
 
   useEffect(() => {
     loadSources();
@@ -218,35 +232,46 @@ export default function Sidebar() {
               </p>
               {webSources.map(source => {
                 const icon = faviconFor(source.domain);
+                const id = source.sourceId || source.url;
                 return (
-                  <a
-                    key={source.sourceId || source.url}
-                    href={source.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group block rounded-xl border border-slate-200 bg-slate-50/80 p-3 transition hover:border-primary-300 hover:bg-primary-50"
+                  <div
+                    key={id}
+                    className="group relative rounded-xl border border-slate-200 bg-slate-50/80 p-3 transition hover:border-primary-300 hover:bg-primary-50"
                   >
-                    <div className="flex items-start gap-2.5">
-                      <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-100">
-                        {icon ? <img src={icon} alt="" className="h-4 w-4" /> : <Globe className="h-3.5 w-3.5 text-slate-400" />}
-                      </span>
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-[12px] font-semibold text-slate-800">{source.publisher || source.domain}</p>
-                        <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-slate-700">{source.title}</p>
-                        <p className="mt-1 truncate text-[10px] text-slate-500">{source.domain}</p>
-                        <p className="mt-0.5 text-[10px] font-medium text-slate-500">{categoryLabel(source)}</p>
-                        {source.publicationDate && (
-                          <p className="mt-0.5 text-[10px] text-slate-400">Published: {formatSourceDate(source.publicationDate)}</p>
-                        )}
-                        <p className="mt-1 text-[10px] leading-relaxed text-slate-500 line-clamp-2">
-                          {source.purpose || 'Relevant evidence for your query'}
-                        </p>
+                    <a
+                      href={source.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block pr-7"
+                    >
+                      <div className="flex items-start gap-2.5">
+                        <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center overflow-hidden rounded-md bg-white shadow-sm ring-1 ring-slate-100">
+                          {icon ? <img src={icon} alt="" className="h-4 w-4" /> : <Globe className="h-3.5 w-3.5 text-slate-400" />}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[12px] font-semibold text-slate-800">{source.publisher || source.domain}</p>
+                          <p className="mt-0.5 line-clamp-2 text-[12px] leading-snug text-slate-700">{source.title}</p>
+                          <p className="mt-1 truncate text-[10px] text-slate-500">{source.domain}</p>
+                          <p className="mt-0.5 text-[10px] font-medium text-slate-500">{categoryLabel(source)}</p>
+                          {source.publicationDate && (
+                            <p className="mt-0.5 text-[10px] text-slate-400">Published: {formatSourceDate(source.publicationDate)}</p>
+                          )}
+                          <p className="mt-1 text-[10px] leading-relaxed text-slate-500 line-clamp-2">
+                            {source.purpose || 'Relevant evidence for your query'}
+                          </p>
+                        </div>
                       </div>
-                      <span className="shrink-0 text-[10px] font-semibold text-primary-600 opacity-0 transition group-hover:opacity-100">
-                        Open <ExternalLink className="inline h-3 w-3" />
-                      </span>
-                    </div>
-                  </a>
+                    </a>
+                    <button
+                      type="button"
+                      onClick={(e) => handleDeleteWebSource(id, e)}
+                      className="absolute right-2 top-2 grid h-6 w-6 place-items-center rounded-lg text-slate-400 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 focus:opacity-100"
+                      title="Remove source"
+                      aria-label="Remove source"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 );
               })}
             </div>
@@ -269,14 +294,23 @@ export default function Sidebar() {
                 Your Sources ({sources.length})
               </p>
               {sources.map(doc => (
-                <div key={doc.id} className="group flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-primary-300 hover:bg-primary-50">
+                <div key={doc.id} className="group relative flex items-center gap-3 rounded-xl border border-slate-200 p-3 transition hover:border-primary-300 hover:bg-primary-50">
                   <div className="grid h-8 w-8 shrink-0 place-items-center rounded border border-slate-100 bg-white text-primary-600 shadow-sm">
                     {doc.type === 'website' || doc.type === 'youtube' ? <Globe className="h-4 w-4" /> : <FileText className="h-4 w-4" />}
                   </div>
-                  <div className="min-w-0 flex-1">
+                  <div className="min-w-0 flex-1 pr-7">
                     <p className="truncate text-[13px] font-semibold text-slate-800">{doc.name}</p>
                     <p className="mt-0.5 truncate text-[11px] text-slate-500">{new Date(doc.addedAt).toLocaleDateString()}</p>
                   </div>
+                  <button
+                    type="button"
+                    onClick={(e) => handleDeleteDocument(doc.id, e)}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 grid h-7 w-7 place-items-center rounded-lg text-slate-400 opacity-0 transition hover:bg-rose-50 hover:text-rose-600 group-hover:opacity-100 focus:opacity-100"
+                    title="Remove source"
+                    aria-label={`Remove ${doc.name}`}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               ))}
             </div>

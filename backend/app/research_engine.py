@@ -285,8 +285,14 @@ def classify_request(
     elif force_research is False:
         live = False
 
+    # An uploaded document is an explicit source-bound question.  Do not quietly
+    # mix web search into its answer: the user can run a separate web search when
+    # they want outside material.
+    if has_uploads and force_research is not True:
+        classification = "uploaded_sources"
+        live = False
     # Student agents: prefer uploads; live only when current/external facts asked
-    if agent_id in {"studyvault", "successarchitect", "guideminds"} and upload and not live:
+    elif agent_id in {"studyvault", "successarchitect", "guideminds"} and upload and not live:
         classification = "uploaded_sources"
         live = False
     elif live and upload:
@@ -932,6 +938,7 @@ def source_id_for(url: str) -> str:
 def build_upload_sources(
     uploads: list[dict[str, Any]],
     agent_id: str,
+    query: str,
     start_citation: int = 1,
 ) -> list[SourceRecord]:
     sources: list[SourceRecord] = []
@@ -942,7 +949,9 @@ def build_upload_sources(
         doc_type = str(item.get("type") or "upload")
         url = str(item.get("url") or f"upload://{item.get('id') or name}")
         sid = str(item.get("id") or source_id_for(url))
-        snippets = extract_snippets(text, name, limit=2) if text else []
+        # Select passages against the actual question, not the filename.  This is
+        # what lets a question be answered from a long PDF/notes upload.
+        snippets = extract_snippets(text, query, limit=6) if text else []
         sources.append(
             SourceRecord(
                 sourceId=sid,
@@ -1065,7 +1074,7 @@ async def run_research_pipeline(
     # Uploaded sources first
     if uploads:
         await emit("uploads", "active", f"Indexing {len(uploads)} uploaded source(s)")
-        sources.extend(build_upload_sources(uploads, agent_id=agent_id, start_citation=1))
+        sources.extend(build_upload_sources(uploads, agent_id=agent_id, query=prompt, start_citation=1))
         await emit("uploads", "completed", f"Loaded {len(uploads)} uploaded source(s)", {"count": len(uploads)})
 
     live_needed = classification["liveResearchRequired"]

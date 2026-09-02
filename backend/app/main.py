@@ -19,7 +19,7 @@ from pydantic import BaseModel, EmailStr, Field
 import httpx
 
 ROOT = Path(__file__).resolve().parents[1]
-# Load backend .env before importing AI modules so OPENAI_API_KEY is available.
+# Load backend .env before importing AI modules so provider keys are available.
 load_dotenv(ROOT / ".env")
 
 from app.research_engine import run_research_pipeline, stream_research_events  # noqa: E402
@@ -320,7 +320,16 @@ async def run_agent(payload: AgentRunRequest, user: UserResponse = Depends(curre
         research_classification = "provided_evidence"
         retrieved_at = datetime.now(timezone.utc).isoformat()
 
-    system_message = (payload.systemPrompt or f"You are COMET's {payload.agentId} agent.") + EVIDENCE_SYSTEM_ADDENDUM
+    source_only_instruction = ""
+    if payload.uploads and payload.forceResearch is not True:
+        source_only_instruction = (
+            " SOURCE-ONLY MODE: Answer using only the user's uploaded sources in the EVIDENCE PACK. "
+            "Do not use general knowledge, web knowledge, assumptions, or outside examples. "
+            "Every answerable factual statement must cite an uploaded source. "
+            "If the answer is not contained in the uploaded material, say exactly: "
+            "\"This information is not present in the uploaded source(s).\""
+        )
+    system_message = (payload.systemPrompt or f"You are COMET's {payload.agentId} agent.") + EVIDENCE_SYSTEM_ADDENDUM + source_only_instruction
     full_prompt = f"ORIGINAL USER CHALLENGE:\n{payload.prompt}"
     if payload.context:
         full_prompt += f"\n\nSHARED WORKSPACE MEMORY / UPSTREAM OUTPUTS:\n{payload.context}"

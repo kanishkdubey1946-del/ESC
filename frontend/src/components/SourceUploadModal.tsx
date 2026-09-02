@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertCircle, CheckCircle2, FileText, Loader2, UploadCloud, X } from 'lucide-react';
+import { authenticatedHeaders } from '../lib/localAuth';
 import { saveWorkspaceDocument } from '../lib/workspaceMemory';
 
 type ProcessState = 'idle' | 'uploading' | 'extracting' | 'processing' | 'ready' | 'error';
@@ -33,7 +34,7 @@ export default function SourceUploadModal({ isOpen, onClose, onSuccess }: Source
       let text = '';
       let extractedType = uploadedFile.type || 'text/plain';
 
-      const response = await fetch(`${apiBase}/api/v1/sources/extract`, { method: 'POST', body: form });
+      const response = await fetch(`${apiBase}/api/v1/sources/extract`, { method: 'POST', headers: authenticatedHeaders(), body: form });
       const result = await response.json().catch(() => ({}));
       if (result.success && result.text) {
         text = String(result.text);
