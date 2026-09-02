@@ -1,4 +1,4 @@
-# 🌠 COMET — AI Personalized Learning Assistant
+# ESC- Enhanced Study Companion — AI Personalized Learning Assistant
 
 > **Problem Statement:** AI Personalized Learning Assistant — recommend study plans and learning resources based on student performance.
 
