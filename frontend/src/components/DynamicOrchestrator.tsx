@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AlertCircle, Check, ChevronDown, ChevronUp, Copy, Eye, Loader2, MapPin, Mic, Plus, RefreshCw, Search, FileText, BarChart3, Code2, Repeat, Pin, X, Layers3, Globe, Type, FileVideo, Image as ImageIcon, UploadCloud, ArrowUp } from 'lucide-react';
+import { AlertCircle, Check, ChevronDown, ChevronUp, Copy, Eye, MapPin, Mic, Plus, RefreshCw, Search, FileText, BarChart3, Code2, Repeat, Pin, X, Layers3, Globe, Type, FileVideo, Image as ImageIcon, UploadCloud, ArrowUp } from 'lucide-react';
+import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import { generateAgentResponse } from '../utils/llm';
 import type { AgentResult } from '../types/agents';
 import type { ResearchEvent, SourceRecord } from '../types/sources';
@@ -26,7 +27,7 @@ const STUDENT_TOOLS = [
   { id: 'mindmaps', name: 'Short Notes & Mind Maps', icon: Layers3, description: 'Visual learning resources' },
 ];
 
-// ─── Mode-scoped persistence (Business / Student / Playground never share state) ─
+// ─── Mode-scoped persistence (Student / Playground never share state) ─
 
 function saveSession(mode: WorkspaceMode, data: Record<string, unknown>) {
   try { localStorage.setItem(sessionStorageKey(mode), JSON.stringify({ ...data, mode })); } catch {}
@@ -37,7 +38,7 @@ function loadSession(mode: WorkspaceMode): Record<string, unknown> | null {
     const raw = localStorage.getItem(sessionStorageKey(mode));
     if (raw) return JSON.parse(raw) as Record<string, unknown>;
     // Migration: legacy shared key only if mode matches
-    const legacy = localStorage.getItem('comet.session.v1');
+    const legacy = localStorage.getItem('esc.session.v1');
     if (legacy) {
       const parsed = JSON.parse(legacy) as Record<string, unknown>;
       if (parsed.mode === mode) return parsed;
@@ -137,7 +138,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
 
   useEffect(() => {
     try {
-      const stored = localStorage.getItem('comet.student.tools');
+      const stored = localStorage.getItem('esc.student.tools');
       if (stored) {
         const { pinned, hidden } = JSON.parse(stored);
         if (pinned) setPinnedTools(pinned);
@@ -147,10 +148,10 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
   }, []);
 
   useEffect(() => {
-    localStorage.setItem('comet.student.tools', JSON.stringify({ pinned: pinnedTools, hidden: hiddenTools }));
+    localStorage.setItem('esc.student.tools', JSON.stringify({ pinned: pinnedTools, hidden: hiddenTools }));
   }, [pinnedTools, hiddenTools]);
 
-  // Mode-scoped bootstrap: never leak Business ↔ Student ↔ Playground state
+  // Mode-scoped bootstrap: never leak Student ↔ Playground state
   useEffect(() => {
     const modeAgents = agentsForMode(mode);
     const session = loadSession(mode);
@@ -326,44 +327,22 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
         if (agent) agent.dependencies.forEach(dep => { selectedIds.add(dep); addDeps(dep); });
       };
 
-      if (mode === 'student' || mode === 'playground') {
-        const toModeId = (id: string) => mode === 'playground' ? `pg_${id}` : id;
-        const select = (...ids: string[]) => ids.forEach(id => selectedIds.add(toModeId(id)));
+      const toModeId = (id: string) => mode === 'playground' ? `pg_${id}` : id;
+      const select = (...ids: string[]) => ids.forEach(id => selectedIds.add(toModeId(id)));
 
-        if (/notes?|pdf|chapter|document|syllabus|summari[sz]e/i.test(lower)) select('studyvault');
-        if (/score|performance|accuracy|weak topic|readiness|result/i.test(lower)) select('examinsight');
-        if (/plan|schedule|timetable|days left|routine|deadline/i.test(lower)) select('successarchitect');
-        if (/explain|concept|understand|what is|why does/i.test(lower)) select('conceptclarifier');
-        if (/math|calculus|equation|geometry|solve|problem|physics|chemistry|numerical/i.test(lower)) select('problemsolver');
-        if (/mcq|quiz|practice test|mock test|test me/i.test(lower)) select('quizforge');
-        if (/revise|revision|active recall|spaced repetition|last.minute/i.test(lower)) select('revisioncoach');
-        if (/flash ?cards?|memor[yi]s[ea]/i.test(lower)) select('flashcardstudio');
-        if (/mind ?map|concept map|formula sheet|short notes/i.test(lower)) select('mindmapmaker');
-        if (/resource|video|lecture|reading|learn from/i.test(lower)) select('resourcescout');
-        if (/previous paper|past paper|paper pattern|recurring topic/i.test(lower)) select('paperpatternanalyst');
-        if (/overwhelm|motivat|focus|procrastin|start studying|study habit/i.test(lower)) select('guideminds');
-        if (selectedIds.size === 0) select('conceptclarifier', 'guideminds');
-      } else {
-        // Business: start from intent, avoid running every agent
-        selectedIds.add('research');
-        if (/strateg|business model|gtm|go-to-market|positioning|roadmap|launch|startup|opportunity|plan/i.test(lower)) {
-          selectedIds.add('strategy');
-        }
-        if (/market|competitor|demand|tam|sam|som|pricing|segment/i.test(lower)) selectedIds.add('market');
-        if (/finance|cost|revenue|pricing|budget|unit economics|break-even/i.test(lower)) selectedIds.add('finance');
-        if (/market(ing)?|campaign|content|caption|social|copy|brand|launch plan/i.test(lower)) {
-          selectedIds.add('marketing');
-          selectedIds.add('content');
-        }
-        if (/app|software|platform|api|website|mvp|tech|stack|architect|product/i.test(lower)) {
-          selectedIds.add('development');
-        }
-        if (/pitch|deck|investor|presentation|recommend/i.test(lower)) selectedIds.add('pitch');
-        if (selectedIds.size === 1 && /fitness|gym|business|startup|open|launch|idea/i.test(lower)) {
-          selectedIds.add('strategy');
-        }
-        if (selectedIds.size === 1) selectedIds.add('strategy');
-      }
+      if (/notes?|pdf|chapter|document|syllabus|summari[sz]e/i.test(lower)) select('studyvault');
+      if (/score|performance|accuracy|weak topic|readiness|result/i.test(lower)) select('examinsight');
+      if (/plan|schedule|timetable|days left|routine|deadline/i.test(lower)) select('successarchitect');
+      if (/explain|concept|understand|what is|why does/i.test(lower)) select('conceptclarifier');
+      if (/math|calculus|equation|geometry|solve|problem|physics|chemistry|numerical/i.test(lower)) select('problemsolver');
+      if (/mcq|quiz|practice test|mock test|test me/i.test(lower)) select('quizforge');
+      if (/revise|revision|active recall|spaced repetition|last.minute/i.test(lower)) select('revisioncoach');
+      if (/flash ?cards?|memor[yi]s[ea]/i.test(lower)) select('flashcardstudio');
+      if (/mind ?map|concept map|formula sheet|short notes/i.test(lower)) select('mindmapmaker');
+      if (/resource|video|lecture|reading|learn from/i.test(lower)) select('resourcescout');
+      if (/previous paper|past paper|paper pattern|recurring topic/i.test(lower)) select('paperpatternanalyst');
+      if (/overwhelm|motivat|focus|procrastin|start studying|study habit/i.test(lower)) select('guideminds');
+      if (selectedIds.size === 0) select('conceptclarifier', 'guideminds');
 
       Array.from(selectedIds).forEach(addDeps);
       activeAgents = agentsToRun.filter(a => selectedIds.has(a.id));
@@ -385,10 +364,10 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
     setChatLog(prev => [
       ...prev,
       { id: crypto.randomUUID(), role: 'user', text: submitted },
-      { id: crypto.randomUUID(), role: 'status', text: 'COMET is understanding your request…' },
+      { id: crypto.randomUUID(), role: 'status', text: 'ESC is understanding your request…' },
     ]);
     setStickToBottom(true);
-    window.dispatchEvent(new CustomEvent('comet-web-sources', { detail: { query: submitted, status: 'searching', sources: [] } }));
+    window.dispatchEvent(new CustomEvent('esc-web-sources', { detail: { query: submitted, status: 'searching', sources: [] } }));
     
     // Set initial statuses
     const initialStatuses: Record<string, ExtendedStatus> = {};
@@ -449,7 +428,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
         evidencePack,
       });
       const st = (research as { stats?: { sourcesFound?: number; sourcesUsed?: number; crossCheckedClaims?: number } }).stats;
-      window.dispatchEvent(new CustomEvent('comet-web-sources', {
+      window.dispatchEvent(new CustomEvent('esc-web-sources', {
         detail: {
           query: submitted,
           sources: sources.filter(s => s.url?.startsWith('http')),
@@ -876,7 +855,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
             {isStudent && <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-violet-600">ACADEMIC</span>}
             {isPlayground && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold tracking-wide text-emerald-600">SANDBOX</span>}
           </div>
-          {/* Compact Automatic / Manual — top-right of Business Chat */}
+          {/* Compact Automatic / Manual — top-right of Studio Chat */}
           <div
             className="flex shrink-0 items-center rounded-full border border-slate-200 bg-slate-100 p-0.5"
             role="group"
@@ -884,7 +863,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
           >
             <button
               type="button"
-              title="COMET automatically selects the most relevant agents."
+              title="ESC automatically selects the most relevant agents."
               onClick={() => setOrchestrationMode('automatic')}
               className={`rounded-full px-2.5 py-1 text-[11px] font-semibold transition duration-150 sm:px-3 ${
                 orchestrationMode === 'automatic'
@@ -1013,7 +992,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
           )}
         </div>
 
-        {/* ChatGPT-style Business Chat composer */}
+        {/* Specialist Studio composer */}
         <div className="border-t border-slate-100 p-3 sm:p-4">
           <div className="mx-auto max-w-3xl">
             {orchestrationMode === 'manual' && (
@@ -1136,7 +1115,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
             {voiceState === 'listening' && (
               <p className="mt-2 text-center text-[11px] text-rose-600">Listening… speak now</p>
             )}
-            <p className="mt-2 text-center text-[11px] text-slate-400">COMET can be inaccurate; please double-check its responses.</p>
+            <p className="mt-2 text-center text-[11px] text-slate-400">ESC can be inaccurate; please double-check its responses.</p>
           </div>
         </div>
       </div>
@@ -1153,7 +1132,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
         <div className="flex-1 p-3 space-y-2">
           {/* Header info */}
           <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-            <p className="text-[13px] font-semibold text-slate-900">COMET AI Team</p>
+            <p className="text-[13px] font-semibold text-slate-900">ESC AI Team</p>
             <p className="mt-1 text-[11px] text-slate-500">{agents.length} specialists • {orchestrationMode} mode</p>
             {orchestrationMode === 'manual' && (
               <div className="mt-2 flex gap-2">
@@ -1377,7 +1356,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
                 <div>
                   <h3 id="location-prompt-title" className="text-base font-semibold text-slate-900">Location helps local analysis</h3>
                   <p className="mt-1.5 text-sm leading-relaxed text-slate-600">
-                    To provide local market demand, nearby competitor analysis, and location-specific recommendations, COMET needs your location. You may allow current location access or enter the location manually.
+                    To provide local market demand, nearby competitor analysis, and location-specific recommendations, ESC needs your location. You may allow current location access or enter the location manually.
                   </p>
                 </div>
               </div>
@@ -1421,7 +1400,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
                   Continue Without Location
                 </button>
               </div>
-              <p className="mt-3 text-[11px] text-slate-400">COMET stores only the market area you choose for this project — not continuous GPS tracking.</p>
+              <p className="mt-3 text-[11px] text-slate-400">ESC stores only the market area you choose for this project — not continuous GPS tracking.</p>
             </motion.div>
           </div>
         )}

@@ -1,16 +1,16 @@
-# permanent memory - COMET
+# permanent memory - ESC
 
 ## 1. Context
 
-Modern businesses, founders, freelancers, and students face high operational friction when trying to execute workflows across separate AI interfaces. **COMET (Multi-Agent Business Orchestrator)** is a centralized platform designed to solve this fragmentation by orchestrating collaborative AI agents (Research, Strategy, Content, Development, and Pitch) under a single shared workspace context.
+Modern businesses, founders, freelancers, and students face high operational friction when trying to execute workflows across separate AI interfaces. **ESC (Multi-Agent Business Orchestrator)** is a centralized platform designed to solve this fragmentation by orchestrating collaborative AI agents (Research, Strategy, Content, Development, and Pitch) under a single shared workspace context.
 
-This `memory.md` file serves as the permanent memory, conceptual anchor, and root source of truth for the COMET project. All engineering designs, security rules, frontend components, and task tickets must align with the instructions and principles documented here.
+This `memory.md` file serves as the permanent memory, conceptual anchor, and root source of truth for the ESC project. All engineering designs, security rules, frontend components, and task tickets must align with the instructions and principles documented here.
 
 ---
 
 ## 2. Objective
 
-The objective of COMET is to deliver a production-ready AI SaaS environment where:
+The objective of ESC is to deliver a production-ready AI SaaS environment where:
 1. Users can input a single high-level business objective and receive a structured portfolio of strategy, market, content, development, and pitch outputs.
 2. A centralized Task Router coordinates parallel and sequential agent executions dynamically.
 3. State, configuration inputs, and generated logs are saved and synced using Firebase Firestore and streamed via Server-Sent Events.
@@ -42,14 +42,14 @@ The objective of COMET is to deliver a production-ready AI SaaS environment wher
 ## 4. Detailed Explanation
 
 ### 4.1 Problem Statement
-Modern businesses rely on multiple disconnected tools to perform research, strategy planning, software development, content generation, and investor communication. Switching between these tools wastes time, increases operational complexity, duplicates work, and slows execution. COMET solves this by orchestrating specialized AI agents that collaborate within a single workflow.
+Modern businesses rely on multiple disconnected tools to perform research, strategy planning, software development, content generation, and investor communication. Switching between these tools wastes time, increases operational complexity, duplicates work, and slows execution. ESC solves this by orchestrating specialized AI agents that collaborate within a single workflow.
 
 ### 4.2 High-Level Architecture
 The orchestration pipeline routes user requests through a central gateway into specialized subagents:
 ```text
 User
   ↓
-COMET Dashboard
+ESC Dashboard
   ↓
 Orchestrator
   ↓
@@ -84,7 +84,7 @@ Unified Response
 
 ### 4.5 AI Generation Rules
 When generating code:
-- Never rename COMET.
+- Never rename ESC.
 - Never remove the five MVP agents.
 - Never replace the orchestrator with a single-agent workflow.
 - Do not introduce undocumented technologies.
@@ -96,7 +96,7 @@ When generating code:
 ## 5. Tables
 
 ### Table 1: Core Target Users
-| Target Segment | Primary Pain Point | COMET Solution Value |
+| Target Segment | Primary Pain Point | ESC Solution Value |
 | :--- | :--- | :--- |
 | **Startup Founders** | High cost of business strategy planning | Dynamic GTM roadmaps and pricing models |
 | **Freelancers** | Slow scoping and proposal writing | Rapid target demographic and outline generator |

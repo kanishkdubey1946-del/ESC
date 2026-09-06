@@ -5,10 +5,10 @@ import json as json_module
 import os
 import secrets
 import sqlite3
-from contextlib import contextmanager
+from contextlib import aclosing, contextmanager
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 from urllib.parse import urlparse
 
 from dotenv import load_dotenv
@@ -28,8 +28,9 @@ from app.source_extract import extract_text_from_bytes  # noqa: E402
 from app.db import initialise_database as initialise_esc_database  # noqa: E402
 from app.routes.student import router as student_router  # noqa: E402
 from app.auth import current_user as esc_current_user, login_user, logout_token, register_user  # noqa: E402
+from app.assistant_chat import stream_assistant_chat_events  # noqa: E402
 
-DATABASE_PATH = Path(os.getenv("COMET_DATABASE_PATH", ROOT / "comet.db"))
+DATABASE_PATH = Path(os.getenv("ESC_DATABASE_PATH", ROOT / "esc.db"))
 SESSION_DURATION = timedelta(hours=8)
 
 
@@ -199,6 +200,18 @@ class ResearchRunRequest(BaseModel):
     forceResearch: bool | None = None
 
 
+class ChatHistoryMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(max_length=20_000)
+
+
+class ChatStreamRequest(BaseModel):
+    prompt: str = Field(min_length=1, max_length=20_000)
+    agentId: str = Field(default="assistant", max_length=100)
+    uploads: list[UploadSource] = Field(default_factory=list, max_length=20)
+    history: list[ChatHistoryMessage] = Field(default_factory=list, max_length=24)
+
+
 class AgentRunRequest(BaseModel):
     agentId: str
     prompt: str
@@ -243,6 +256,30 @@ EVIDENCE_SYSTEM_ADDENDUM = (
     "evidenceStatus (Verified|Strong Evidence|Moderate Evidence|Limited Evidence|Conflicting Evidence|Estimate|Needs Verification), "
     "claims (array of {claim, sourceIds, confidence, evidenceType})."
 )
+
+
+@app.post("/api/v1/chat/stream")
+async def assistant_chat_stream(payload: ChatStreamRequest, user: UserResponse = Depends(current_user)):
+    if not payload.prompt.strip():
+        raise HTTPException(status_code=422, detail="Please enter a question.")
+    if sum(len(upload.text) for upload in payload.uploads) > 1_000_000:
+        raise HTTPException(status_code=413, detail="These sources are too large. Select fewer documents for this question.")
+
+    async def generate():
+        async with aclosing(stream_assistant_chat_events(
+            prompt=payload.prompt,
+            uploads=[upload.model_dump() for upload in payload.uploads],
+            history=[message.model_dump() for message in payload.history],
+            agent_id=payload.agentId,
+        )) as stream:
+            async for event in stream:
+                yield json_module.dumps(event, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(
+        generate(),
+        media_type="application/x-ndjson",
+        headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
+    )
 
 
 @app.post("/api/v1/research/run")
@@ -329,7 +366,7 @@ async def run_agent(payload: AgentRunRequest, user: UserResponse = Depends(curre
             "If the answer is not contained in the uploaded material, say exactly: "
             "\"This information is not present in the uploaded source(s).\""
         )
-    system_message = (payload.systemPrompt or f"You are COMET's {payload.agentId} agent.") + EVIDENCE_SYSTEM_ADDENDUM + source_only_instruction
+    system_message = (payload.systemPrompt or f"You are ESC's {payload.agentId} agent.") + EVIDENCE_SYSTEM_ADDENDUM + source_only_instruction
     full_prompt = f"ORIGINAL USER CHALLENGE:\n{payload.prompt}"
     if payload.context:
         full_prompt += f"\n\nSHARED WORKSPACE MEMORY / UPSTREAM OUTPUTS:\n{payload.context}"
@@ -458,7 +495,7 @@ async def fetch_website_source(payload: WebsiteSourceRequest, user: UserResponse
     try:
         async with httpx.AsyncClient(timeout=30.0, follow_redirects=True, max_redirects=5) as client:
             response = await client.get(url, headers={
-                "User-Agent": "COMET-Bot/1.0 (Research Assistant)",
+                "User-Agent": "ESC-Bot/1.0 (Research Assistant)",
                 "Accept": "text/html,application/xhtml+xml,text/plain",
             })
 

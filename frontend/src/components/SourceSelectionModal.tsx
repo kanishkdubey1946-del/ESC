@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UploadCloud, Globe, HardDrive, Type, ArrowLeft, Loader2, CheckCircle2, AlertCircle, FileVideo, Image as ImageIcon } from 'lucide-react';
+import { X, UploadCloud, Globe, HardDrive, Type, ArrowLeft, CheckCircle2, AlertCircle, FileVideo, Image as ImageIcon } from 'lucide-react';
+import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import { authenticatedHeaders } from '../lib/localAuth';
 import { saveWorkspaceDocument } from '../lib/workspaceMemory';
 

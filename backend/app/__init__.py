@@ -1,1 +1,1 @@
-"""COMET local backend package."""
+"""ESC local backend package."""

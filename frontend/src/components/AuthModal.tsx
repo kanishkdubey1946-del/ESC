@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, CheckCircle2, Eye, EyeOff, Loader2, X } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
+import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import { localAuth } from '../lib/localAuth';
 import { useAuth } from '../auth/AuthProvider';
 

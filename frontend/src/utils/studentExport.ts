@@ -55,7 +55,7 @@ export function downloadQuestionPaperPdf(meta: {
 }) {
   const pdf = new jsPDF();
   const header = [
-    'COMET · Question Paper',
+    'ESC · Question Paper',
     meta.title,
     [meta.subject, meta.chapter].filter(Boolean).join(' · '),
     `Questions: ${meta.questions.length}`
@@ -73,12 +73,12 @@ export function downloadQuestionPaperPdf(meta: {
     return lines;
   });
   writeLines(pdf, [...header, ...body]);
-  pdf.save(`COMET_Question_Paper_${stamp()}.pdf`);
+  pdf.save(`ESC_Question_Paper_${stamp()}.pdf`);
 }
 
 export function downloadAnswerKeyPdf(questions: MockQuestion[]) {
   const pdf = new jsPDF();
-  const lines = ['COMET · Answer Key', ''];
+  const lines = ['ESC · Answer Key', ''];
   questions.forEach((q, i) => {
     const ans = q.correctIndex != null && q.options[q.correctIndex] != null
       ? `${String.fromCharCode(65 + q.correctIndex)}. ${q.options[q.correctIndex]}`
@@ -86,12 +86,12 @@ export function downloadAnswerKeyPdf(questions: MockQuestion[]) {
     lines.push(`Q${i + 1}. ${ans}`);
   });
   writeLines(pdf, lines);
-  pdf.save(`COMET_Answer_Key_${stamp()}.pdf`);
+  pdf.save(`ESC_Answer_Key_${stamp()}.pdf`);
 }
 
 export function downloadSolutionsPdf(questions: MockQuestion[]) {
   const pdf = new jsPDF();
-  const lines = ['COMET · Complete Solutions', ''];
+  const lines = ['ESC · Complete Solutions', ''];
   questions.forEach((q, i) => {
     lines.push(`Q${i + 1}. ${q.text}`);
     if (q.correctIndex != null && q.options[q.correctIndex]) {
@@ -102,7 +102,7 @@ export function downloadSolutionsPdf(questions: MockQuestion[]) {
     lines.push('');
   });
   writeLines(pdf, lines);
-  pdf.save(`COMET_Solutions_${stamp()}.pdf`);
+  pdf.save(`ESC_Solutions_${stamp()}.pdf`);
 }
 
 export function downloadPerformancePdf(report: {
@@ -117,7 +117,7 @@ export function downloadPerformancePdf(report: {
 }) {
   const pdf = new jsPDF();
   const lines = [
-    'COMET · Performance Report',
+    'ESC · Performance Report',
     report.title,
     '',
     `Score: ${report.score} / ${report.graded || '—'}`,
@@ -133,19 +133,19 @@ export function downloadPerformancePdf(report: {
   if (!report.topicStats.length) lines.push('No topic labels available in questions.');
   else report.topicStats.forEach(t => lines.push(`- ${t.topic}: ${t.correct}/${t.total}`));
   writeLines(pdf, lines);
-  pdf.save(`COMET_Performance_${stamp()}.pdf`);
+  pdf.save(`ESC_Performance_${stamp()}.pdf`);
 }
 
 export function downloadFlashcardsCsv(cards: Array<{ front: string; back: string }>) {
   const esc = (s: string) => `"${s.replace(/"/g, '""')}"`;
   const rows = [['Front', 'Back'], ...cards.map(c => [c.front, c.back])];
   const csv = rows.map(r => r.map(esc).join(',')).join('\n');
-  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `COMET_Flashcards_${stamp()}.csv`);
+  downloadBlob(new Blob([csv], { type: 'text/csv;charset=utf-8' }), `ESC_Flashcards_${stamp()}.csv`);
 }
 
 export function downloadFlashcardsPdf(cards: Array<{ front: string; back: string }>) {
   const pdf = new jsPDF();
-  const lines = ['COMET · Flashcards', ''];
+  const lines = ['ESC · Flashcards', ''];
   cards.forEach((c, i) => {
     lines.push(`Card ${i + 1}`);
     lines.push(`Front: ${c.front}`);
@@ -153,7 +153,7 @@ export function downloadFlashcardsPdf(cards: Array<{ front: string; back: string
     lines.push('');
   });
   writeLines(pdf, lines);
-  pdf.save(`COMET_Flashcards_${stamp()}.pdf`);
+  pdf.save(`ESC_Flashcards_${stamp()}.pdf`);
 }
 
 function escapeXml(s: string) {
@@ -184,7 +184,7 @@ export function mindMapSvgString(topic: string, branches: Array<{ label: string;
 
 export function downloadMindMapSvg(topic: string, branches: Array<{ label: string; children: string[] }>) {
   const svg = mindMapSvgString(topic, branches);
-  downloadBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), `COMET_MindMap_${stamp()}.svg`);
+  downloadBlob(new Blob([svg], { type: 'image/svg+xml;charset=utf-8' }), `ESC_MindMap_${stamp()}.svg`);
 }
 
 /** Rasterize SVG → PNG via canvas (real image file). */
@@ -208,7 +208,7 @@ export function downloadMindMapPng(topic: string, branches: Array<{ label: strin
     ctx.drawImage(img, 0, 0);
     canvas.toBlob((png) => {
       URL.revokeObjectURL(url);
-      if (png) downloadBlob(png, `COMET_MindMap_${stamp()}.png`);
+      if (png) downloadBlob(png, `ESC_MindMap_${stamp()}.png`);
       else downloadMindMapSvg(topic, branches);
     }, 'image/png');
   };
@@ -228,5 +228,5 @@ export function downloadMindMapPdf(topic: string, branches: Array<{ label: strin
     lines.push('');
   });
   writeLines(pdf, lines);
-  pdf.save(`COMET_MindMap_${stamp()}.pdf`);
+  pdf.save(`ESC_MindMap_${stamp()}.pdf`);
 }

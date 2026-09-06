@@ -1,9 +1,9 @@
 # System Architecture & Orchestration
 
-This is the system-level blueprint for the **COMET — Multi-Agent Business Orchestrator** engineering runtime.
+This is the system-level blueprint for the **ESC — Multi-Agent Business Orchestrator** engineering runtime.
 
 ## Core System Objective
-COMET orchestrates five specialized agents (Research, Strategy, Content, Development, Pitch) to form a unified business launch sequence. It operates with a dark-themed high-fidelity UI on the frontend, coordinated by a FastAPI backend using Google ADK and Gemini 2.5 Flash, backed by InsForge (database, authentication, hosting) rather than traditional Firebase.
+ESC orchestrates five specialized agents (Research, Strategy, Content, Development, Pitch) to form a unified business launch sequence. It operates with a dark-themed high-fidelity UI on the frontend, coordinated by a FastAPI backend using Google ADK and Gemini 2.5 Flash, backed by InsForge (database, authentication, hosting) rather than traditional Firebase.
 
 ## System Execution Pipeline
 The runtime enforces a strict pipeline for every developer prompt and system update:

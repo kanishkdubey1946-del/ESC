@@ -1,7 +1,7 @@
-# COMET Project Overview
+# ESC Project Overview
 
 ## Core Product Identity
-COMET is a Multi-Agent Business Orchestrator designed to consolidate startup planning, market research, development setup, content strategy, and pitch creation into a single unified workspace.
+ESC is a Multi-Agent Business Orchestrator designed to consolidate startup planning, market research, development setup, content strategy, and pitch creation into a single unified workspace.
 
 ## Core Target Users
 * **Startup Founders**: Seek dynamic GTM roadmaps and pricing models.

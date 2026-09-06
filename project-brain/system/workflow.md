@@ -1,6 +1,6 @@
 # Workflow Management
 
-COMET runs a multi-agent pipeline where context is passed sequentially from upstream agents to downstream agents.
+ESC runs a multi-agent pipeline where context is passed sequentially from upstream agents to downstream agents.
 
 ## Core Flow Steps
 1. **User Prompt Input**: Startups, founders, freelancers, or students submit a business concept.

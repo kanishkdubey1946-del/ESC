@@ -1,6 +1,6 @@
 # Database Schema & Structure
 
-COMET persists data using InsForge database services.
+ESC persists data using InsForge database services.
 
 ## Tables
 

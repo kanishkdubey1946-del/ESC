@@ -3,7 +3,7 @@
  * Heavy experiences are lazy-loaded for performance.
  */
 import { Component, Suspense, lazy, type ErrorInfo, type ReactNode } from 'react';
-import { Loader2 } from 'lucide-react';
+import { OrbLoader as Loader2 } from '../ui/OrbLoader';
 import type { SourceRecord } from '../../types/sources';
 import SourcesUsedPanel from '../research/SourcesUsedPanel';
 import {
@@ -136,7 +136,7 @@ export type AgentOutputRendererProps = {
   researchFailed?: boolean;
   researchError?: string;
   userPrompt?: string;
-  mode?: 'business' | 'student' | 'playground';
+  mode?: 'student' | 'playground';
   onCitationClick?: (n: number, source?: SourceRecord) => void;
   onCopyText?: (label: string, text: string) => void;
   onRegenerate?: () => void;
@@ -177,8 +177,8 @@ export default function AgentOutputRenderer({
   });
 
   return (
-    <div className="comet-output space-y-5 pb-8">
-      <div className="comet-output-banner">
+    <div className="esc-output space-y-5 pb-8">
+      <div className="esc-output-banner">
         <strong>{experienceLabel(experienceType)}</strong>
         <span className="text-[11px] font-medium text-slate-500">Agent · {baseId}</span>
       </div>
@@ -194,13 +194,13 @@ export default function AgentOutputRenderer({
         })}
       </VizBoundary>
 
-      <div id="section-sources" className="comet-section comet-section--source">
-        <span className="comet-section__rail" aria-hidden />
-        <header className="comet-section__head">
-          <span className="comet-section__eyebrow">Source evidence</span>
-          <h3 className="comet-section__title">Sources & provenance</h3>
+      <div id="section-sources" className="esc-section esc-section--source">
+        <span className="esc-section__rail" aria-hidden />
+        <header className="esc-section__head">
+          <span className="esc-section__eyebrow">Source evidence</span>
+          <h3 className="esc-section__title">Sources & provenance</h3>
         </header>
-        <div className="comet-section__body !pt-2">
+        <div className="esc-section__body !pt-2">
           <VizBoundary key={`src-${agentId}`} label="sources">
             <SourcesUsedPanel
               sources={sources}

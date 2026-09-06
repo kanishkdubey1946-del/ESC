@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState, type ComponentType, type CSSProperties } from 'react';
-import { ChevronDown, Copy, Download, Loader2, MessageSquare, RefreshCw, X } from 'lucide-react';
+import { ChevronDown, Copy, Download, MessageSquare, RefreshCw, X } from 'lucide-react';
+import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import type { AgentResult } from '../types/agents';
 import type { SourceRecord } from '../types/sources';
 import { formatRetrievedDate } from '../utils/sourceDates';
@@ -20,7 +21,7 @@ export type AgentOutputModalProps = {
   loading?: boolean;
   regenError?: string | null;
   userPrompt?: string;
-  mode?: 'business' | 'student' | 'playground';
+  mode?: 'student' | 'playground';
   onClose: () => void;
   onRegenerate: () => void;
   onComment?: () => void;

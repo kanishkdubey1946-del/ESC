@@ -3,31 +3,43 @@ export default function HomeFooter() {
     <footer className="hp-footer">
       <div className="hp-footer-grid">
         <div>
-          <a className="hp-brand" href="#top">
+          <a className="hp-brand" href="#top" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', fontWeight: 800, letterSpacing: '0.08em', color: '#fff' }}>
             <span className="hp-mark" aria-hidden />
-            <span>COMET</span>
+            <span>ESC</span>
           </a>
-          <h2>Build. Gain. Grow.</h2>
+          <p className="sp-brand-desc">
+            Enhanced Study Companion — 12 AI specialists working together
+            to help you learn, master, and excel in any subject.
+          </p>
         </div>
+
         <div>
           <h3>Product</h3>
           <a href="#top">Home</a>
-          <a href="#modes">Modes</a>
+          <a href="#modes">Features</a>
           <a href="#how">How it works</a>
+          <a href="#specialists">Specialists</a>
         </div>
-        <div>
-          <h3>Modes</h3>
-          <a href="#modes">Business</a>
-          <a href="#modes">Student</a>
-          <a href="#modes">Playground</a>
-        </div>
+
         <div>
           <h3>Workspace</h3>
-          <a href="/dashboard">Open dashboard</a>
-          <a href="#top">Back to top</a>
+          <a href="#modes">Student Mode</a>
+          <a href="#modes">Playground</a>
+          <a href="/dashboard">Open Dashboard</a>
+        </div>
+
+        <div>
+          <h3>Quick Access</h3>
+          <a href="#top">Back to top ↑</a>
+          <a href="#how">How it works</a>
+          <a href="/dashboard">Launch ESC →</a>
         </div>
       </div>
-      <p className="hp-copy">© {new Date().getFullYear()} COMET</p>
+
+      <div className="hp-copy">
+        <span>© {new Date().getFullYear()} ESC — Enhanced Study Companion</span>
+        <span style={{ color: 'rgba(255,255,255,0.2)' }}>Study smarter, not harder.</span>
+      </div>
     </footer>
   );
 }

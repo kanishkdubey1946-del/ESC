@@ -30,7 +30,7 @@ export const AGENT_DEFINITIONS: Record<string, AgentDefinition> = {
       + 'marketOrDomainAnalysis, currentTrends, opportunities, risks, dataLimitations, detailedReport. '
       + 'competitionLevel: Low|Moderate|High|Very High only if evidence supports it; else omit and explain in competitionRationale. '
       + 'competitors: array of {name, location, strength, weakness, position, evidence} using ONLY real entities from evidence. '
-      + 'opportunityScore: 0-100 COMET Opportunity Assessment ONLY if you can justify factors; set opportunityScoreNote to "Preliminary estimate" when evidence is thin; '
+      + 'opportunityScore: 0-100 ESC Opportunity Assessment ONLY if you can justify factors; set opportunityScoreNote to "Preliminary estimate" when evidence is thin; '
       + 'opportunityScoreFactors: [{factor, weight, score, evidence}]. Never invent market sizes. '
       + 'riskScore 0-100 (higher = more risk) only with riskMethodology and riskFactors; else omit. '
       + 'tam/sam/som: fill ONLY with values present in evidence (include units and year in string); otherwise leave empty string. '
@@ -448,7 +448,7 @@ export async function generateAgentResponse(
     ? previousOutputs.slice(-28_000)
     : 'No prior agent output is available; reason only from the original challenge and evidence pack.';
   const systemPrompt =
-    `You are COMET's ${agent.role}. Your job is distinct from the other agents. ${agent.instructions} ` +
+    `You are ESC's ${agent.role}. Your job is distinct from the other agents. ${agent.instructions} ` +
     'Respond with valid JSON only. Do not use markdown fences. Do not copy generic templates. ' +
     'Make every factual conclusion traceable to the EVIDENCE PACK, uploaded sources, or original request.';
 

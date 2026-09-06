@@ -1,125 +1,171 @@
-import { useEffect, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
-import { BookOpen, CheckCircle2, Clock3, FileUp, Loader2, RefreshCw, Sparkles, Target, TrendingDown, TrendingUp } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { ArrowDownRight, ArrowRight, ArrowUpRight, BookOpen, CalendarDays, Check, ChevronLeft, ChevronRight, Clock3, Focus, Layers3, ListChecks, Plus, RefreshCw, Settings2, Sparkles, Target, TrendingUp } from 'lucide-react';
 import { escApi } from '../../lib/escApi';
-import type { ProfilePayload } from '../../lib/escApi';
+import { AIStatus } from '../ui/AIStatus';
+import { OrbLoader } from '../ui/OrbLoader';
+import { ThinkingOrb } from '../ui/thinking-orbs';
+import { AnalyticsChart } from '../ui/AnalyticsChart';
+import { DashboardCard } from '../ui/DashboardCard';
+import { ProgressBar } from '../ui/ProgressBar';
+import LearningSetup from './LearningSetup';
+import LearningDiagnostic from './LearningDiagnostic';
+import LearningMaterials from './LearningMaterials';
+import { dateKey, errorClass, primaryButton, readableError, secondaryButton } from './learningTypes';
+import type { LearningMemory, MasteryState, StudyTask } from './learningTypes';
 
-type Memory = any;
+export type StudyWorkspaceView = 'overview' | 'planner' | 'analytics';
 
-const weekDefaults = { monday: 60, tuesday: 60, wednesday: 60, thursday: 60, friday: 60, saturday: 90, sunday: 90 };
+type EscDashboardProps = {
+  view?: StudyWorkspaceView;
+  onAsk?: (prompt: string) => void;
+  displayName?: string;
+};
 
-function statusStyle(status: string) {
-  if (status === 'strong') return 'bg-emerald-50 text-emerald-700 border-emerald-100';
-  if (status === 'developing') return 'bg-amber-50 text-amber-700 border-amber-100';
-  if (status === 'weak') return 'bg-rose-50 text-rose-700 border-rose-100';
-  return 'bg-slate-100 text-slate-600 border-slate-200';
+function statusColor(status: string) {
+  if (status === 'strong') return 'bg-[#cadb9c]/10 text-[#cadb9c]';
+  if (status === 'developing') return 'bg-[#e8c48b]/10 text-[#e8c48b]';
+  if (status === 'weak') return 'bg-[#eda3a9]/10 text-[#eda3a9]';
+  return 'bg-white/5 text-[#96949f]';
 }
 
-function daysRemaining(deadline?: string | null) {
-  if (!deadline) return null;
-  const diff = Math.ceil((new Date(`${deadline}T00:00:00`).getTime() - new Date().setHours(0, 0, 0, 0)) / 86_400_000);
-  return Math.max(0, diff);
+function TaskRow({ task, index, pending, onToggle, onAsk }: {
+  task: StudyTask; index: number; pending: boolean;
+  onToggle: (task: StudyTask) => void; onAsk?: (prompt: string) => void;
+}) {
+  return <motion.article layout className={`group relative flex items-start gap-3 rounded-2xl border p-4 transition sm:gap-4 ${task.completed ? 'border-[#cadb9c]/15 bg-[#cadb9c]/[.035]' : 'border-white/[.07] bg-white/[.015] hover:border-white/15'}`}>
+    <button type="button" disabled={pending} onClick={() => onToggle(task)} aria-label={`${pending ? 'Saving' : task.completed ? 'Mark incomplete' : 'Complete'}: ${task.topic}`} aria-pressed={task.completed} aria-busy={pending} className={`grid h-10 w-10 shrink-0 place-items-center rounded-full border transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#b7a1f8] disabled:opacity-50 ${task.completed ? 'border-[#cadb9c] bg-[#cadb9c] text-[#28301d]' : 'border-white/20 text-[#b7a1f8] hover:border-[#b7a1f8]'}`}>
+      {pending ? <OrbLoader state="working" className="h-5 w-5" /> : task.completed ? <Check size={16} /> : <span className="text-xs">{index + 1}</span>}
+    </button>
+    <div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h3 className={`text-sm font-medium ${task.completed ? 'text-[#a2a794] line-through decoration-[#a2a794]/40' : 'text-[#e4dfea]'}`}>{task.topic}</h3>{task.completed && <span className="text-[10px] text-[#cadb9c]">Done</span>}</div><p className="mt-1 text-xs leading-5 text-[#96949f]">{task.action}</p><div className="mt-3 flex flex-wrap items-center gap-3"><span className="inline-flex items-center gap-1.5 text-[11px] text-[#a7a2b0]"><Clock3 size={12} /> {task.durationMinutes} min</span>{onAsk && !task.completed && <button type="button" onClick={() => onAsk(`Help me with my study session on ${task.topic}. My planned activity is: ${task.action}. I have ${task.durationMinutes} minutes. Guide me one step at a time.`)} className="inline-flex items-center gap-1 text-[11px] font-medium text-[#bfacf3] transition hover:text-[#e3d7ff]">Study with ESC <ArrowUpRight size={12} /></button>}</div></div>
+  </motion.article>;
 }
 
-function Onboarding({ onSaved }: { onSaved: () => void }) {
-  const [form, setForm] = useState<ProfilePayload>({
-    grade: '', curriculum: '', subjects: [], goal: '', deadline: null, weekly_hours: 8,
-    daily_availability: weekDefaults, preferred_session_minutes: 45, weak_topics: [],
-  });
-  const [subjects, setSubjects] = useState('');
-  const [weakTopics, setWeakTopics] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState('');
-  const submit = async (event: FormEvent) => {
-    event.preventDefault(); setError(''); setSaving(true);
-    try {
-      await escApi.saveProfile({ ...form, subjects: subjects.split(',').map(x => x.trim()).filter(Boolean), weak_topics: weakTopics.split(',').map(x => x.trim()).filter(Boolean) });
-      onSaved();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to save your profile.'); }
-    finally { setSaving(false); }
-  };
-  return <section className="mx-auto w-full max-w-3xl rounded-3xl border border-primary-100 bg-white p-6 shadow-sm sm:p-8">
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-primary-50 px-3 py-1 text-xs font-bold text-primary-700"><Sparkles className="h-3.5 w-3.5" /> ESC SETUP</span>
-    <h1 className="mt-4 text-3xl font-bold tracking-tight text-slate-900">Make your first plan real.</h1>
-    <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">ESC uses your actual deadline and study time to turn later quiz results into a plan. Nothing is guessed.</p>
-    <form className="mt-6 grid gap-4 sm:grid-cols-2" onSubmit={submit}>
-      <label className="text-sm font-medium text-slate-700">Class / grade<input required value={form.grade} onChange={e => setForm({ ...form, grade: e.target.value })} className="field" placeholder="e.g. Grade 12" /></label>
-      <label className="text-sm font-medium text-slate-700">Curriculum<input required value={form.curriculum} onChange={e => setForm({ ...form, curriculum: e.target.value })} className="field" placeholder="e.g. CBSE" /></label>
-      <label className="text-sm font-medium text-slate-700 sm:col-span-2">Subjects (comma separated)<input required value={subjects} onChange={e => setSubjects(e.target.value)} className="field" placeholder="Physics, Chemistry, Mathematics" /></label>
-      <label className="text-sm font-medium text-slate-700 sm:col-span-2">Target exam or goal<input required value={form.goal} onChange={e => setForm({ ...form, goal: e.target.value })} className="field" placeholder="e.g. Improve physics readiness for final exam" /></label>
-      <label className="text-sm font-medium text-slate-700">Deadline<input type="date" value={form.deadline || ''} onChange={e => setForm({ ...form, deadline: e.target.value || null })} className="field" /></label>
-      <label className="text-sm font-medium text-slate-700">Preferred session (minutes)<input type="number" min="15" max="180" value={form.preferred_session_minutes} onChange={e => setForm({ ...form, preferred_session_minutes: Number(e.target.value) })} className="field" /></label>
-      <label className="text-sm font-medium text-slate-700">Weekly hours<input type="number" min="0" max="112" step="0.5" value={form.weekly_hours} onChange={e => setForm({ ...form, weekly_hours: Number(e.target.value) })} className="field" /></label>
-      <label className="text-sm font-medium text-slate-700">Daily availability (minutes)<input type="number" min="0" max="1440" value={form.daily_availability.default ?? 60} onChange={e => setForm({ ...form, daily_availability: { default: Number(e.target.value) } })} className="field" /></label>
-      <label className="text-sm font-medium text-slate-700 sm:col-span-2">Optional self-rated weak topics<input value={weakTopics} onChange={e => setWeakTopics(e.target.value)} className="field" placeholder="e.g. Electrostatics, Organic chemistry" /></label>
-      {error && <p role="alert" className="sm:col-span-2 rounded-xl bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-      <button disabled={saving} className="sm:col-span-2 primary-button">{saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Target className="h-4 w-4" />} {saving ? 'Saving…' : 'Save profile and begin diagnosis'}</button>
-    </form>
-  </section>;
+function MasteryList({ states }: { states: MasteryState[] }) {
+  return states.length > 0 ? <div className="mt-5 space-y-5">{states.map(state => <div key={state.topic}><div className="mb-2.5 flex items-center justify-between gap-3"><span className="truncate text-sm text-[#dcd6e5]">{state.topic}</span><span className={`shrink-0 rounded-md px-2 py-1 text-[10px] capitalize ${statusColor(state.status)}`}>{state.status.replaceAll('_', ' ')}</span></div><ProgressBar value={state.mastery} label={`${state.topic} mastery`} detail={`${Math.round(state.mastery)}%`} /><div className="mt-2 flex justify-between text-[10px] text-[#85818e]"><span>{Math.round(state.confidence * 100)}% confidence</span><span className="flex items-center gap-1 capitalize">{state.trend === 'improving' ? <ArrowUpRight size={11} /> : state.trend === 'declining' ? <ArrowDownRight size={11} /> : null}{state.trend.replaceAll('_', ' ')}</span></div></div>)}</div> : <div className="mt-5 rounded-xl border border-dashed border-white/10 px-5 py-7"><Layers3 className="mb-3 text-[#827591]" size={22} /><p className="text-sm text-[#d7d0e1]">A clearer picture, one quiz at a time.</p><p className="mt-2 text-xs leading-6 text-[#96949f]">Complete a diagnostic to see the topics you’re confident in and the ones that need a little care.</p></div>;
 }
 
-function Diagnostic({ profile, sources, onCompleted }: { profile: any; sources: any[]; onCompleted: () => void }) {
-  const [subject, setSubject] = useState(profile.subjects?.[0] || '');
-  const [topic, setTopic] = useState(profile.weakTopics?.[0] || '');
-  const [quiz, setQuiz] = useState<any>(null);
-  const [answers, setAnswers] = useState<Record<string, number | null>>({});
-  const [startedAt, setStartedAt] = useState<string>('');
-  const [result, setResult] = useState<any>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const generate = async (event: FormEvent) => {
-    event.preventDefault(); setLoading(true); setError(''); setResult(null);
-    try {
-      const response = await escApi.generateQuiz({ subject, topic, difficulty: 'medium', question_count: 5, duration_minutes: 10, source_ids: sources.map(source => source.id) });
-      setQuiz(response.quiz); setAnswers({}); setStartedAt(new Date().toISOString());
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to generate a diagnostic.'); }
-    finally { setLoading(false); }
-  };
-  const submit = async () => {
-    if (!quiz || !startedAt) return;
-    setLoading(true); setError('');
-    try {
-      const response = await escApi.submitQuiz({ quiz_id: quiz.id, answers: quiz.questions.map((question: any) => ({ question_id: question.id, selected_index: answers[question.id] ?? null })), started_at: startedAt, duration_seconds: Math.round((Date.now() - new Date(startedAt).getTime()) / 1000) });
-      setResult(response.attempt); onCompleted();
-    } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to submit the diagnostic.'); }
-    finally { setLoading(false); }
-  };
-  return <section className="panel">
-    <div className="flex flex-wrap items-start justify-between gap-4"><div><h2 className="section-title">Take a diagnostic</h2><p className="section-copy">Questions are graded by ESC’s backend. Answer keys stay hidden until you submit.</p></div><BookOpen className="h-6 w-6 text-primary-600" /></div>
-    {!quiz && <form className="mt-4 grid gap-3 sm:grid-cols-[1fr_1fr_auto]" onSubmit={generate}>
-      <select value={subject} onChange={e => setSubject(e.target.value)} className="field"><option value="">Choose a subject</option>{(profile.subjects || []).map((item: string) => <option key={item}>{item}</option>)}</select>
-      <input required value={topic} onChange={e => setTopic(e.target.value)} className="field" placeholder="Topic, e.g. Electrostatics" />
-      <button disabled={loading || !subject || !topic} className="primary-button px-4">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Generate 5 MCQs'}</button>
-    </form>}
-    {quiz && !result && <div className="mt-5 space-y-5"><div className="rounded-xl bg-primary-50 px-4 py-3 text-sm text-primary-800"><strong>{quiz.title}</strong> · {quiz.durationMinutes} minutes · {quiz.questions.length} questions</div>{quiz.questions.map((question: any, index: number) => <fieldset key={question.id} className="rounded-xl border border-slate-200 p-4"><legend className="px-1 text-sm font-semibold text-slate-900">{index + 1}. {question.prompt}</legend><div className="mt-3 grid gap-2">{question.options.map((option: string, optionIndex: number) => <label key={option} className={`cursor-pointer rounded-lg border p-3 text-sm ${answers[question.id] === optionIndex ? 'border-primary-400 bg-primary-50' : 'border-slate-200 hover:bg-slate-50'}`}><input className="mr-2" type="radio" name={question.id} checked={answers[question.id] === optionIndex} onChange={() => setAnswers({ ...answers, [question.id]: optionIndex })} />{option}</label>)}</div></fieldset>)}<button onClick={submit} disabled={loading} className="primary-button">{loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Submit for authoritative grading'}</button></div>}
-    {result && <div className="mt-5 rounded-2xl border border-emerald-100 bg-emerald-50 p-4"><h3 className="font-semibold text-emerald-900">Diagnostic submitted: {result.percentage}%</h3><p className="mt-1 text-sm text-emerald-800">{result.correct} correct · {result.incorrect} incorrect · {result.unattempted} unattempted</p><div className="mt-3 grid gap-2">{result.review.map((item: any) => <div key={item.questionId} className="rounded-lg bg-white p-3 text-sm text-slate-700"><strong>{item.isCorrect ? 'Correct' : 'Review'}:</strong> {item.explanation}</div>)}</div>{result.planChangeSummary?.length > 0 && <p className="mt-3 text-sm text-emerald-900">Your plan was updated: {result.planChangeSummary.map((change: any) => change.reason).join(' ')}</p>}<button className="mt-4 text-sm font-semibold text-primary-700" onClick={() => { setQuiz(null); setResult(null); }}>Re-test a topic</button></div>}
-    {error && <p role="alert" className="mt-3 rounded-lg bg-rose-50 p-3 text-sm text-rose-700">{error}</p>}
-  </section>;
-}
-
-export default function EscDashboard() {
-  const [memory, setMemory] = useState<Memory | null>(null);
+export default function EscDashboard({ view = 'overview', onAsk, displayName }: EscDashboardProps) {
+  const [memory, setMemory] = useState<LearningMemory | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
-  const [sourceText, setSourceText] = useState('');
-  const [sourceTitle, setSourceTitle] = useState('');
-  const [sourceTopics, setSourceTopics] = useState('');
-  const [sourceFile, setSourceFile] = useState<File | null>(null);
-  const [sourceSaving, setSourceSaving] = useState(false);
-  const reload = async () => { setLoading(true); setError(''); try { setMemory(await escApi.memory()); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Could not load learning memory.'); } finally { setLoading(false); } };
-  useEffect(() => { void reload(); }, []);
-  const progress = memory?.planProgress?.total ? Math.round((memory.planProgress.completed / memory.planProgress.total) * 100) : 0;
-  const remaining = daysRemaining(memory?.profile?.deadline);
-  const saveSource = async (event: FormEvent) => { event.preventDefault(); setSourceSaving(true); setError(''); const topics = sourceTopics.split(',').map(item => item.trim()).filter(Boolean); try { if (sourceFile) await escApi.uploadSource(sourceFile, topics); else await escApi.addSource({ title: sourceTitle, source_type: 'notes', extracted_text: sourceText, topics, provenance: 'Student-uploaded material' }); setSourceFile(null); setSourceTitle(''); setSourceText(''); setSourceTopics(''); await reload(); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to save material.'); } finally { setSourceSaving(false); } };
-  const toggleTask = async (task: any) => { try { await escApi.patchTask(task.id, !task.completed); await reload(); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to update task.'); } };
-  if (loading) return <div className="grid flex-1 place-items-center"><Loader2 className="h-7 w-7 animate-spin text-primary-600" /></div>;
-  if (!memory?.profile) return <div className="flex flex-1 overflow-y-auto p-4 sm:p-8"><Onboarding onSaved={() => void reload()} /></div>;
-  return <main className="min-w-0 flex-1 overflow-y-auto p-1 sm:p-2"><div className="mx-auto max-w-7xl space-y-5 pb-10">
-    <header className="flex flex-wrap items-end justify-between gap-4 rounded-3xl bg-slate-900 px-5 py-6 text-white sm:px-7"><div><p className="text-xs font-bold tracking-[0.16em] text-primary-200">ESC · ENHANCED STUDY COMPANION</p><h1 className="mt-2 text-2xl font-bold">Your performance-based study loop</h1><p className="mt-1 text-sm text-slate-300">{memory.profile.goal}</p></div><div className="rounded-2xl bg-white/10 px-4 py-3 text-sm"><p className="text-slate-300">{remaining == null ? 'No deadline set' : `${remaining} day${remaining === 1 ? '' : 's'} remaining`}</p><p className="mt-1 font-semibold">{memory.profile.curriculum} · {memory.profile.grade}</p></div></header>
-    {error && <div role="alert" className="flex items-center justify-between gap-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700"><span>{error}</span><button onClick={() => void reload()} className="font-semibold">Retry</button></div>}
-    <section className="grid gap-4 md:grid-cols-4"><div className="metric"><Clock3 className="metric-icon" /><span>Today’s plan</span><strong>{memory.currentPlan?.tasks?.filter((task: any) => task.date === new Date().toISOString().slice(0, 10)).length || 0} tasks</strong></div><div className="metric"><Target className="metric-icon" /><span>Plan progress</span><strong>{progress}%</strong></div><div className="metric"><TrendingDown className="metric-icon" /><span>Priority weak topics</span><strong>{memory.diagnosis?.weaknesses?.length || 0}</strong></div><div className="metric"><CheckCircle2 className="metric-icon" /><span>Recent diagnostics</span><strong>{memory.recentAttempts?.length || 0}</strong></div></section>
-    <section className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]"><Diagnostic profile={memory.profile} sources={memory.sources || []} onCompleted={() => void reload()} /><section className="panel"><div className="flex justify-between gap-3"><div><h2 className="section-title">Topic mastery</h2><p className="section-copy">Calculated from stored, graded attempts.</p></div><TrendingUp className="h-5 w-5 text-primary-600" /></div>{memory.mastery?.length ? <div className="mt-4 space-y-3">{memory.mastery.map((state: any) => <article key={state.topic} className="rounded-xl border border-slate-100 p-3"><div className="flex items-center justify-between gap-2"><strong className="text-sm text-slate-800">{state.topic}</strong><span className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${statusStyle(state.status)}`}>{state.status.replace('_', ' ')}</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-primary-600" style={{ width: `${state.mastery}%` }} /></div><p className="mt-2 text-xs text-slate-600">{state.mastery}% mastery · {Math.round(state.confidence * 100)}% confidence · {state.trend}</p></article>)}</div> : <div className="mt-4 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">No evidence yet. Take a diagnostic to create your first mastery map.</div>}<div className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-900"><strong>Why?</strong> {memory.diagnosis?.explanation || 'A diagnosis will explain priorities after your first diagnostic.'}</div></section></section>
-    <section className="grid gap-5 xl:grid-cols-[1.15fr_.85fr]"><section className="panel"><div className="flex flex-wrap justify-between gap-3"><div><h2 className="section-title">Updated study plan {memory.currentPlan ? `· v${memory.currentPlan.version}` : ''}</h2><p className="section-copy">{memory.currentPlan?.summary || 'Generate a plan after your profile or first diagnostic.'}</p>{memory.currentPlan?.generationReason && <p className="mt-2 text-xs text-slate-500">Generated because: {memory.currentPlan.generationReason}</p>}</div><button onClick={async () => { try { await escApi.createPlan(); await reload(); } catch (reason) { setError(reason instanceof Error ? reason.message : 'Unable to generate plan.'); } }} className="secondary-button"><RefreshCw className="h-4 w-4" /> Update plan</button></div>{memory.currentPlan?.changeSummary?.length > 0 && <div className="mt-3 rounded-xl bg-primary-50 p-3 text-sm text-primary-900">{memory.currentPlan.changeSummary.map((change: any) => <p key={`${change.topic}-${change.change}`}>{change.topic}: {change.reason}</p>)}</div>}<div className="mt-4 space-y-2">{memory.currentPlan?.tasks?.length ? memory.currentPlan.tasks.map((task: any) => <button key={task.id} onClick={() => void toggleTask(task)} className={`flex w-full items-start gap-3 rounded-xl border p-3 text-left transition ${task.completed ? 'border-emerald-100 bg-emerald-50/60' : 'border-slate-200 hover:border-primary-200'}`}><span className={`mt-0.5 grid h-5 w-5 place-items-center rounded-full border ${task.completed ? 'border-emerald-500 bg-emerald-500 text-white' : 'border-slate-300'}`}>{task.completed && <CheckCircle2 className="h-3.5 w-3.5" />}</span><span className="flex-1"><strong className="text-sm text-slate-800">{task.topic} · {task.durationMinutes} min</strong><span className="mt-0.5 block text-xs text-slate-600">{task.action}</span><span className="mt-1 block text-xs text-slate-500">{task.rationale}</span></span></button>) : <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">Set daily availability and generate a plan to see feasible tasks.</p>}</div></section><section className="panel"><div className="flex items-start justify-between gap-3"><div><h2 className="section-title">Learning materials</h2><p className="section-copy">Uploaded material is preferred for matching topics.</p></div><FileUp className="h-5 w-5 text-primary-600" /></div><form onSubmit={saveSource} className="mt-4 space-y-3"><input value={sourceTitle} onChange={event => setSourceTitle(event.target.value)} required={!sourceFile} className="field" placeholder="Material title" /><input value={sourceTopics} onChange={event => setSourceTopics(event.target.value)} className="field" placeholder="Topics (comma separated)" /><input type="file" onChange={(event: ChangeEvent<HTMLInputElement>) => { setSourceFile(event.target.files?.[0] || null); if (event.target.files?.[0]) setSourceTitle(event.target.files[0].name); }} className="block w-full text-sm" />{!sourceFile && <textarea value={sourceText} onChange={event => setSourceText(event.target.value)} className="field min-h-24" placeholder="Paste notes, syllabus, or previous-paper text" required />}<button disabled={sourceSaving} className="secondary-button">{sourceSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileUp className="h-4 w-4" />} Save material</button></form><div className="mt-4 space-y-2">{(memory.resources || []).slice(0, 6).map((resource: any) => <article key={resource.id} className="rounded-xl bg-slate-50 p-3"><strong className="text-sm text-slate-800">{resource.title}</strong><p className="mt-1 text-xs text-slate-600">{resource.topic} · {resource.reason}</p><p className="mt-1 text-[11px] text-slate-500">{resource.provenance}</p></article>)}{!(memory.resources || []).length && <p className="text-sm text-slate-500">Upload material or complete a diagnostic to receive matched recommendations.</p>}</div></section></section>
-    <section className="panel"><h2 className="section-title">Recent quiz results</h2>{memory.recentAttempts?.length ? <div className="mt-3 grid gap-3 md:grid-cols-3">{memory.recentAttempts.slice(0, 3).map((attempt: any) => <article key={attempt.id} className="rounded-xl bg-slate-50 p-4"><strong className="text-slate-800">{attempt.topic}</strong><p className="mt-1 text-2xl font-bold text-primary-700">{attempt.percentage}%</p><p className="mt-1 text-xs text-slate-600">{attempt.correct}/{attempt.graded} correct · {new Date(attempt.submittedAt).toLocaleDateString()}</p></article>)}</div> : <p className="mt-3 text-sm text-slate-600">Your submitted diagnostics will appear here and persist after refresh or later sign-in.</p>}</section>
-  </div></main>;
+  const [editingProfile, setEditingProfile] = useState(false);
+  const [showDiagnostic, setShowDiagnostic] = useState(false);
+  const [planning, setPlanning] = useState(false);
+  const [pendingTasks, setPendingTasks] = useState<Set<string>>(new Set());
+  const [weekOffset, setWeekOffset] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<string | null>(null);
+  const [taskFilter, setTaskFilter] = useState<'all' | 'open' | 'done'>('all');
+  const diagnosticRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+
+  const reload = useCallback(async () => {
+    setRefreshing(true); setError('');
+    try { setMemory(await escApi.memory()); }
+    catch (reason) { setError(readableError(reason, 'Your study space could not be loaded.')); }
+    finally { setLoading(false); setRefreshing(false); }
+  }, []);
+  useEffect(() => { void reload(); }, [reload]);
+  useEffect(() => { if (showDiagnostic) diagnosticRef.current?.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' }); }, [showDiagnostic, reduceMotion]);
+
+  const weekDays = useMemo(() => {
+    const monday = new Date();
+    monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7 + weekOffset * 7);
+    return Array.from({ length: 7 }, (_, index) => { const day = new Date(monday); day.setDate(monday.getDate() + index); return day; });
+  }, [weekOffset]);
+  const tasks = memory?.currentPlan?.tasks || [];
+  const today = dateKey(new Date());
+  const todayTasks = tasks.filter(task => task.date === today);
+  const completed = memory?.planProgress?.completed || 0;
+  const total = memory?.planProgress?.total || 0;
+  const progress = total ? Math.round(completed / total * 100) : 0;
+  const attempts = memory?.recentAttempts || [];
+  const chartData = [...attempts].reverse().map(attempt => ({ label: new Date(attempt.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }), value: attempt.percentage }));
+  const averageScore = attempts.length ? Math.round(attempts.reduce((sum, attempt) => sum + attempt.percentage, 0) / attempts.length) : null;
+  const remaining = memory?.profile?.deadline ? Math.max(0, Math.ceil((new Date(`${memory.profile.deadline}T00:00:00`).getTime() - new Date(`${today}T00:00:00`).getTime()) / 86_400_000)) : null;
+  const firstName = displayName?.trim().split(/\s+/)[0];
+
+  const toggleTask = async (task: StudyTask) => {
+    setPendingTasks(current => new Set(current).add(task.id)); setError('');
+    try {
+      await escApi.patchTask(task.id, !task.completed);
+      setMemory(current => {
+        if (!current?.currentPlan) return current;
+        const nextTasks = current.currentPlan.tasks.map(item => item.id === task.id ? { ...item, completed: !task.completed } : item);
+        return { ...current, currentPlan: { ...current.currentPlan, tasks: nextTasks }, planProgress: { total: nextTasks.length, completed: nextTasks.filter(item => item.completed).length } };
+      });
+    } catch (reason) { setError(readableError(reason, 'Unable to save this session.')); }
+    finally { setPendingTasks(current => { const next = new Set(current); next.delete(task.id); return next; }); }
+  };
+  const generatePlan = async () => {
+    setPlanning(true); setError('');
+    try { await escApi.createPlan(); await reload(); setWeekOffset(0); setSelectedDate(null); }
+    catch (reason) { setError(readableError(reason, 'Unable to build your plan.')); }
+    finally { setPlanning(false); }
+  };
+  const askForPlan = () => onAsk?.(`Help me build a practical study plan for ${memory?.profile?.goal || 'my study goal'}. My subjects are ${memory?.profile?.subjects.join(', ') || 'not set yet'}, I can study ${memory?.profile?.weeklyHours || 0} hours each week in ${memory?.profile?.preferredSessionMinutes || 45}-minute sessions${memory?.profile?.deadline ? `, and my target date is ${memory.profile.deadline}` : ''}. My priority topics are ${memory?.mastery.filter(state => state.status === 'weak').map(state => state.topic).join(', ') || memory?.profile?.weakTopics.join(', ') || 'not assessed yet'}. Help me choose the next step.`);
+  const askForInsight = () => onAsk?.(`Explain my study performance and suggest the most useful next step. Here is my recorded learning evidence: ${JSON.stringify({ mastery: memory?.mastery || [], recentResults: attempts.map(attempt => ({ topic: attempt.topic, percentage: attempt.percentage, submittedAt: attempt.submittedAt })), diagnosis: memory?.diagnosis?.explanation || 'No diagnostic yet' })}. Use only this evidence for claims about my performance. If there is no evidence, help me choose a diagnostic instead of inventing scores.`);
+  const openDiagnostic = () => { setShowDiagnostic(true); if (showDiagnostic) diagnosticRef.current?.scrollIntoView({ behavior: reduceMotion ? 'instant' : 'smooth', block: 'start' }); };
+
+  if (loading) return <div className="grid min-h-[420px] flex-1 place-items-center p-8"><AIStatus state="searching" size={64} label="Getting your study space ready" /></div>;
+  if (!memory && error) return <div className="mx-auto grid min-h-[420px] max-w-lg content-center gap-5 p-8"><AIStatus state="listening" size={64} label="Your companion is here" /><h1 className="text-2xl font-medium text-[#f2f0f7]">Let’s reconnect your study space.</h1><p role="alert" className={errorClass}>{error}</p><button onClick={() => void reload()} disabled={refreshing} className={primaryButton}>{refreshing ? <AIStatus state="searching" label="Reconnecting" compact /> : <><RefreshCw size={14} /> Try again</>}</button></div>;
+  if (!memory?.profile || editingProfile) return <div className="min-w-0 flex-1 overflow-y-auto px-4 py-8 sm:px-8"><LearningSetup profile={memory?.profile || undefined} onCancel={memory?.profile ? () => setEditingProfile(false) : undefined} onSaved={() => { setEditingProfile(false); void reload(); }} /></div>;
+
+  const weekTaskDates = new Set(weekDays.map(dateKey));
+  const visibleTasks = tasks.filter(task => (selectedDate ? task.date === selectedDate : weekTaskDates.has(task.date)) && (taskFilter === 'all' || task.completed === (taskFilter === 'done')));
+  const timelineDates = [...new Set(visibleTasks.map(task => task.date))].sort();
+
+  return <main className="min-w-0 flex-1 overflow-y-auto bg-[#101114] px-4 py-7 text-[#f2f0f7] sm:px-7 lg:px-9"><motion.div initial={reduceMotion ? false : { opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: .28 }} className="mx-auto max-w-[1240px] space-y-6 pb-10">
+    <header className="flex flex-wrap items-start justify-between gap-4">
+      <div><p className="text-[10px] font-medium tracking-[.18em] text-[#8d8799]">YOUR LEARNING SPACE</p><h1 className="mt-2 text-[28px] font-medium tracking-[-.04em] sm:text-[32px]">{view === 'overview' ? `A little progress, every day${firstName ? `, ${firstName}` : ''}.` : view === 'planner' ? 'Make time for what matters.' : 'See how far you’ve come.'}</h1><p className="mt-2 text-sm text-[#96949f]">{view === 'overview' ? 'Your goals, your pace. A companion for the journey.' : view === 'planner' ? 'A flexible study rhythm, built around your real availability.' : 'Understand your strengths. Give your next session a direction.'}</p></div>
+      <button type="button" onClick={() => setEditingProfile(true)} className={`${secondaryButton} text-xs`}><Settings2 size={14} /> Study preferences</button>
+    </header>
+    {error && <div role="alert" className={`${errorClass} flex items-start justify-between gap-4`}><p>{error}</p><button type="button" onClick={() => void reload()} disabled={refreshing} className="shrink-0 text-xs font-semibold">Retry</button></div>}
+
+    {view === 'overview' && <>
+      <section className="relative isolate overflow-hidden rounded-[24px] border border-[#b7a1f8]/15 bg-gradient-to-br from-[#292132] via-[#1c1c25] to-[#1b2020] p-6 sm:p-8">
+        <div aria-hidden="true" className="pointer-events-none absolute -right-14 -top-28 -z-10 h-80 w-80 rounded-full bg-[#a181d5]/10 blur-3xl" />
+        <div className="flex flex-col justify-between gap-7 sm:flex-row sm:items-center"><div className="max-w-xl"><AIStatus state="listening" label="Your companion, always in your corner" compact /><h2 className="mt-5 text-2xl font-medium leading-tight tracking-[-.035em] sm:text-[30px]">Big goals. Meet your next small step.</h2><p className="mt-3 max-w-lg text-sm leading-7 text-[#aaa3b5]">{memory.profile.goal}. {todayTasks.some(task => !task.completed) ? `You have ${todayTasks.filter(task => !task.completed).length} study session${todayTasks.filter(task => !task.completed).length === 1 ? '' : 's'} ready for today. Let’s make them count.` : 'We’ll turn what you know and what you want to learn into a plan that feels possible.'}</p><div className="mt-6 flex flex-wrap gap-3"><button type="button" disabled={!onAsk} onClick={askForPlan} className={primaryButton}><Sparkles size={15} /> Build a plan with ESC <ArrowRight size={14} /></button><button type="button" disabled={!onAsk} onClick={askForInsight} className={secondaryButton}><Focus size={15} /> Find my focus</button></div></div><div aria-hidden="true" className="relative grid h-32 w-32 shrink-0 place-items-center self-center rounded-full border border-white/[.06] bg-white/[.015] sm:h-44 sm:w-44"><span className="absolute inset-4 rounded-full border border-white/[.04]" /><ThinkingOrb state="listening" size={64} theme="dark" /></div></div>
+      </section>
+      <section className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[{ icon: Clock3, title: 'Today’s focus', value: `${todayTasks.reduce((sum, task) => sum + task.durationMinutes, 0)} min`, detail: `${todayTasks.length} scheduled sessions`, color: '#b7a1f8' }, { icon: ListChecks, title: 'Plan completed', value: total ? `${progress}%` : 'Not started', detail: `${completed} of ${total} sessions complete`, color: '#cadb9c' }, { icon: TrendingUp, title: 'Recent quiz average', value: averageScore === null ? 'Not assessed' : `${averageScore}%`, detail: `${attempts.length} recorded diagnostics`, color: '#a4c8e1' }, { icon: Target, title: 'Your next milestone', value: remaining === null ? 'At your pace' : `${remaining} days`, detail: remaining === null ? 'Set a date in study preferences' : `${memory.profile.curriculum} · ${memory.profile.grade}`, color: '#e8c48b' }].map(metric => <DashboardCard key={metric.title} className="!p-4 sm:!p-5"><div className="flex items-center gap-2 text-xs text-[#96949f]"><metric.icon size={14} style={{ color: metric.color }} /><span>{metric.title}</span></div><p className="mt-4 text-xl font-medium tracking-tight sm:text-2xl">{metric.value}</p><p className="mt-2 text-[11px] leading-5 text-[#888491]">{metric.detail}</p></DashboardCard>)}
+      </section>
+      <section className="grid gap-5 xl:grid-cols-[1.2fr_1fr]">
+        <DashboardCard title="A little focus for today" eyebrow="YOUR STUDY RHYTHM" action={<span className="text-[11px] text-[#96949f]">{new Date().toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span>}>
+          <div className="mt-5 space-y-3">{todayTasks.length ? todayTasks.slice(0, 3).map((task, index) => <TaskRow key={task.id} task={task} index={index} pending={pendingTasks.has(task.id)} onToggle={task => void toggleTask(task)} onAsk={onAsk} />) : <div className="rounded-2xl border border-dashed border-white/10 p-6"><CalendarDays size={23} className="text-[#a594c4]" /><h3 className="mt-4 text-sm font-medium">A fresh page for today.</h3><p className="mt-2 text-xs leading-6 text-[#96949f]">{memory.mastery.length || memory.profile.weakTopics.length ? 'Build a schedule from your priorities and the time you have available.' : 'Start with a diagnostic or add priority topics in study preferences. ESC will use them to shape your schedule.'}</p><button onClick={() => void generatePlan()} disabled={planning || (!memory.mastery.length && !memory.profile.weakTopics.length)} className={`${secondaryButton} mt-5 text-xs`}>{planning ? <AIStatus state="shaping" label="Shaping your plan" compact /> : <><Plus size={14} /> Generate my schedule</>}</button></div>}</div>
+        </DashboardCard>
+        <DashboardCard title="Your knowledge, taking shape" eyebrow="TOPIC MASTERY" action={<button type="button" onClick={openDiagnostic} className="inline-flex items-center gap-1 text-xs text-[#c4b1f5]">Take a quiz <ArrowUpRight size={13} /></button>}><MasteryList states={memory.mastery.slice(0, 3)} /></DashboardCard>
+      </section>
+      <DashboardCard className="!bg-gradient-to-r !from-[#212326] !to-[#1b1d22]"><div className="flex flex-wrap items-center justify-between gap-5"><div className="flex items-center gap-4"><span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-[#cadb9c]/10 text-[#cadb9c]"><BookOpen size={19} /></span><div><h2 className="text-base font-medium">A few questions. A clearer next step.</h2><p className="mt-1 text-xs leading-6 text-[#96949f]">A 5-question diagnostic helps ESC understand where to focus your effort.</p></div></div><button type="button" onClick={openDiagnostic} className={secondaryButton}>Let’s check in <ArrowRight size={14} /></button></div></DashboardCard>
+    </>}
+
+    {view === 'planner' && <>
+      <section className="grid gap-5 lg:grid-cols-[1fr_300px]">
+        <DashboardCard title="Your week, with a little breathing room" eyebrow="STUDY PLANNER" action={<button type="button" onClick={() => void generatePlan()} disabled={planning || (!memory.mastery.length && !memory.profile.weakTopics.length)} className={primaryButton}>{planning ? <AIStatus state="shaping" label="Building" compact /> : <><Sparkles size={14} /> {memory.currentPlan ? 'Rebuild schedule' : 'Generate schedule'}</>}</button>}>
+          <p className="mt-2 text-sm leading-6 text-[#96949f]">{memory.currentPlan ? memory.currentPlan.summary : 'Choose your priority topics or complete a diagnostic to build your first schedule.'}</p>
+          {planning && <div className="mt-5 rounded-xl border border-[#b7a1f8]/15 bg-[#b7a1f8]/5 p-4"><AIStatus state="shaping" label="Making room for your priorities" /></div>}
+          <div className="mt-6 flex items-center justify-between"><div className="flex items-center gap-2"><button aria-label="Previous week" onClick={() => { setWeekOffset(weekOffset - 1); setSelectedDate(null); }} className="rounded-lg p-2 text-[#aaa3b5] hover:bg-white/5"><ChevronLeft size={16} /></button><span className="text-sm font-medium">{weekDays[0].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {weekDays[6].toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span><button aria-label="Next week" onClick={() => { setWeekOffset(weekOffset + 1); setSelectedDate(null); }} className="rounded-lg p-2 text-[#aaa3b5] hover:bg-white/5"><ChevronRight size={16} /></button></div><button onClick={() => { setWeekOffset(0); setSelectedDate(null); }} className="text-xs text-[#c7b2f8]">This week</button></div>
+          <div className="mt-4 grid grid-cols-7 gap-1.5">{weekDays.map(day => { const key = dateKey(day); const count = tasks.filter(task => task.date === key).length; return <button key={key} type="button" aria-pressed={selectedDate === key} onClick={() => setSelectedDate(selectedDate === key ? null : key)} className={`flex flex-col items-center rounded-xl border px-1 py-3.5 transition ${selectedDate === key ? 'border-[#b7a1f8]/50 bg-[#b7a1f8]/15 text-[#ddccff]' : key === today ? 'border-[#b7a1f8]/20 bg-[#b7a1f8]/[.035] text-[#c6b1fa]' : 'border-transparent text-[#98929f] hover:bg-white/5'}`}><span className="text-[10px]">{day.toLocaleDateString(undefined, { weekday: 'short' })}</span><span className="mt-2 text-lg font-medium">{day.getDate()}</span><span className={`mt-2 h-1 w-1 rounded-full ${count ? 'bg-[#b7a1f8]' : 'bg-white/10'}`} /><span className="sr-only">{count} sessions</span></button>; })}</div>
+          <div className="mt-5 flex items-center justify-between border-y border-white/[.07] py-3"><div className="flex gap-1">{(['all', 'open', 'done'] as const).map(filter => <button type="button" key={filter} onClick={() => setTaskFilter(filter)} aria-pressed={taskFilter === filter} className={`rounded-lg px-3 py-1.5 text-[11px] capitalize transition ${taskFilter === filter ? 'bg-white/[.07] text-[#e4dbf1]' : 'text-[#89838f] hover:text-[#d8d0e3]'}`}>{filter === 'all' ? 'All sessions' : filter}</button>)}</div><span className="text-[10px] text-[#89838f]">{visibleTasks.length} sessions</span></div>
+          <div className="mt-6 space-y-7">{timelineDates.map(day => <section key={day} className="relative border-l border-white/10 pl-5"><span className="absolute -left-[4px] top-1.5 h-[7px] w-[7px] rounded-full bg-[#a897ca]" /><h3 className="mb-3 text-xs font-medium text-[#c4becd]">{day === today ? 'Today' : new Date(`${day}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}</h3><div className="space-y-3">{visibleTasks.filter(task => task.date === day).map((task, index) => <TaskRow key={task.id} task={task} index={index} pending={pendingTasks.has(task.id)} onToggle={task => void toggleTask(task)} onAsk={onAsk} />)}</div></section>)}{!visibleTasks.length && <div className="py-8 text-center"><CalendarDays size={27} className="mx-auto text-[#70667e]" /><p className="mt-4 text-sm text-[#cbc3d4]">{tasks.length ? 'Nothing scheduled in this view.' : 'Your study rhythm is waiting to take shape.'}</p><p className="mx-auto mt-2 max-w-sm text-xs leading-6 text-[#96949f]">{tasks.length ? 'Choose another day or show all sessions for the week.' : 'A short diagnostic gives your plan a useful starting point.'}</p>{!tasks.length && <button type="button" onClick={openDiagnostic} className={`${secondaryButton} mt-4 text-xs`}>Start a diagnostic <ArrowRight size={13} /></button>}</div>}</div>
+        </DashboardCard>
+        <div className="space-y-5"><DashboardCard title="A plan that fits you" eyebrow="YOUR PREFERENCES"><div className="mt-5 space-y-4">{[{ label: 'Weekly study time', value: `${memory.profile.weeklyHours} hours` }, { label: 'Session length', value: `${memory.profile.preferredSessionMinutes} minutes` }, { label: 'Target date', value: memory.profile.deadline ? new Date(`${memory.profile.deadline}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : 'At your pace' }].map(row => <div key={row.label} className="flex items-center justify-between gap-3 border-b border-white/[.06] pb-4 text-xs"><span className="text-[#96949f]">{row.label}</span><span>{row.value}</span></div>)}</div><ProgressBar className="mt-5" value={completed} max={total || 1} label="Current plan progress" detail={`${completed} of ${total} done`} /><button onClick={() => setEditingProfile(true)} className={`${secondaryButton} mt-5 w-full text-xs`}><Settings2 size={13} /> Adjust my availability</button></DashboardCard><DashboardCard className="!border-[#b7a1f8]/15 !bg-[#211d29]"><AIStatus state={planning ? 'shaping' : 'listening'} label={planning ? 'Shaping your week' : 'Need a little guidance?'} /><p className="mt-4 text-sm leading-7 text-[#b0a7bc]">Talk through your goals with ESC, or rebuild your schedule after your next diagnostic.</p><button disabled={!onAsk} onClick={askForPlan} className="mt-4 inline-flex items-center gap-1.5 text-xs font-medium text-[#d1bcff]">Plan with my companion <ArrowUpRight size={13} /></button></DashboardCard>{Boolean(memory.currentPlan?.changeSummary.length) && <DashboardCard title="What changed"><div className="mt-4 space-y-3">{memory.currentPlan?.changeSummary.map((change, index) => <p key={`${change.topic}-${index}`} className="text-xs leading-6 text-[#96949f]"><span className="text-[#d6cde0]">{change.topic}:</span> {change.reason}</p>)}</div></DashboardCard>}</div>
+      </section>
+    </>}
+
+    {view === 'analytics' && <>
+      <section className="grid gap-5 lg:grid-cols-[1.6fr_1fr]">
+        <DashboardCard title="Every attempt tells a story" eyebrow="DIAGNOSTIC PERFORMANCE" action={<span className="rounded-lg border border-white/10 px-3 py-1.5 text-[10px] text-[#a8a0b4]">Last {attempts.length || '0'} attempts</span>}>
+          <div className="mt-5 flex items-end gap-3"><span className="text-4xl font-medium tracking-tight">{averageScore === null ? '—' : `${averageScore}%`}</span><span className="mb-1 text-xs text-[#96949f]">{averageScore === null ? 'Your first data point is ahead' : 'average score'}</span></div><AnalyticsChart data={chartData} label="Diagnostic scores over time" className="mt-5" />{!attempts.length && <button onClick={openDiagnostic} className={`${secondaryButton} mt-4 text-xs`}>Create my first data point <ArrowRight size={13} /></button>}
+        </DashboardCard>
+        <DashboardCard title="The next best step" eyebrow="ESC INSIGHT" className="!border-[#b7a1f8]/15 !bg-gradient-to-br !from-[#262030] !to-[#1a1a20]"><AIStatus state={memory.diagnosis ? 'shaping' : 'listening'} label={memory.diagnosis ? 'Your evidence, made useful' : 'Ready when you are'} className="mt-5" /><p className="mt-5 text-sm leading-7 text-[#c1b6cd]">{memory.diagnosis?.explanation || 'Your first diagnostic helps us find a starting point. As your results grow, you’ll see which topics are getting stronger and where to spend a little more time.'}</p><button type="button" disabled={!onAsk} onClick={askForInsight} className={`${secondaryButton} mt-6 w-full text-xs`}>Explore this with ESC <ArrowUpRight size={14} /></button></DashboardCard>
+      </section>
+      <section className="grid gap-5 lg:grid-cols-2"><DashboardCard title="Know your strengths" eyebrow="TOPIC BREAKDOWN"><MasteryList states={memory.mastery} /></DashboardCard><DashboardCard title="Small wins, saved" eyebrow="RECENT DIAGNOSTICS" action={<button type="button" onClick={openDiagnostic} className="inline-flex items-center gap-1 text-xs text-[#c4b1f5]">New quiz <Plus size={13} /></button>}><div className="mt-5 space-y-3">{attempts.length ? attempts.map(attempt => <article key={attempt.id} className="flex items-center gap-3 rounded-xl border border-white/[.07] p-4"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#b7a1f8]/10 text-[#b7a1f8]"><BookOpen size={16} /></span><div className="min-w-0 flex-1"><h3 className="truncate text-sm text-[#e2d9ed]">{attempt.topic}</h3><p className="mt-1.5 text-[11px] text-[#96949f]">{attempt.correct}/{attempt.graded} correct · {new Date(attempt.submittedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</p></div><span className={`text-lg font-medium ${attempt.percentage >= 75 ? 'text-[#cadb9c]' : 'text-[#c5b0fb]'}`}>{attempt.percentage}%</span></article>) : <p className="rounded-xl border border-dashed border-white/10 p-5 text-sm leading-7 text-[#96949f]">Your submitted diagnostics will appear here. Each one helps your companion understand your learning a little better.</p>}</div></DashboardCard></section>
+    </>}
+
+    <AnimatePresence>{showDiagnostic && <motion.div key="diagnostic" ref={diagnosticRef} className="scroll-mt-6" initial={reduceMotion ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}><LearningDiagnostic profile={memory.profile} sources={memory.sources} onCompleted={() => void reload()} /></motion.div>}</AnimatePresence>
+    {view === 'overview' && <LearningMaterials memory={memory} onSaved={() => void reload()} />}
+    <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[.06] pt-5"><p className="text-[10px] text-[#716b7a]">Your pace. Your progress. Your ESC.</p><div className="flex items-center gap-3">{refreshing && <AIStatus state="searching" label="Syncing your study space" compact />}<span className="text-[10px] text-[#79717f]">{memory.profile.curriculum} · {memory.profile.grade}</span></div></footer>
+  </motion.div></main>;
 }

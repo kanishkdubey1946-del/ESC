@@ -1,6 +1,6 @@
-# COMET Frontend
+# ESC Frontend
 
-COMET uses a local FastAPI backend for email/password authentication during development. Account data is stored in the local SQLite database at `backend/comet.db` and sessions expire after eight hours.
+ESC uses a local FastAPI backend for email/password authentication during development. Account data is stored in the local SQLite database at `backend/esc.db` and sessions expire after eight hours.
 
 ## Run locally
 
@@ -8,13 +8,13 @@ Open two PowerShell terminals.
 
 ```powershell
 # Terminal 1: local API
-cd C:\Users\LOQ\Downloads\COMET-Codex--main\COMET-Codex--main\backend
+cd C:\Users\LOQ\Downloads\ESC-Codex--main\ESC-Codex--main\backend
 python -m uvicorn app.main:app --reload --port 8000
 ```
 
 ```powershell
 # Terminal 2: frontend
-cd C:\Users\LOQ\Downloads\COMET-Codex--main\COMET-Codex--main\frontend
+cd C:\Users\LOQ\Downloads\ESC-Codex--main\ESC-Codex--main\frontend
 npm.cmd run dev
 ```
 
@@ -31,7 +31,7 @@ GEMINI_API_KEY=your_gemini_api_key
 GEMINI_MODEL=gemini-3.5-flash
 ```
 
-Gemini is preferred when configured. COMET then runs each selected agent in sequence, giving it the original request and the complete structured output from earlier agents. If a provider is not configured or returns an error, the agent is marked as failed; COMET never substitutes a sample result.
+Gemini is preferred when configured. ESC then runs each selected agent in sequence, giving it the original request and the complete structured output from earlier agents. If a provider is not configured or returns an error, the agent is marked as failed; ESC never substitutes a sample result.
 
 ## Learning specialist marketplace
 

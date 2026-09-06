@@ -67,8 +67,8 @@ export function ExperienceShell({
   if (!visible.length) return null;
 
   return (
-    <div className="comet-output-shell">
-      <div role="tablist" aria-label="Report sections" className="comet-output-tabs no-scrollbar">
+    <div className="esc-output-shell">
+      <div role="tablist" aria-label="Report sections" className="esc-output-tabs no-scrollbar">
         {visible.map(tab => (
           <button
             key={tab.id}
@@ -76,7 +76,7 @@ export function ExperienceShell({
             role="tab"
             aria-selected={current?.id === tab.id}
             onClick={() => setActive(tab.id)}
-            className="comet-output-tab"
+            className="esc-output-tab"
           >
             {tab.label}
           </button>
@@ -108,10 +108,10 @@ export function MetricCard({
     danger: 'border-rose-200 bg-rose-50/40',
   };
   return (
-    <div className={`comet-metric ${tones[tone]}`}>
-      <p className="comet-metric__label">{label}</p>
-      <div className="comet-metric__value">{value}</div>
-      {hint && <div className="comet-metric__hint">{hint}</div>}
+    <div className={`esc-metric ${tones[tone]}`}>
+      <p className="esc-metric__label">{label}</p>
+      <div className="esc-metric__value">{value}</div>
+      {hint && <div className="esc-metric__hint">{hint}</div>}
     </div>
   );
 }
@@ -393,8 +393,8 @@ export function ExecutiveSummaryCard({
         )}
         {metrics && metrics.length > 0 && (
           <div>
-            <p className="comet-subsection !mt-1">Key assessments</p>
-            <div className="comet-metric-grid">
+            <p className="esc-subsection !mt-1">Key assessments</p>
+            <div className="esc-metric-grid">
               {metrics.map(m => (
                 <MetricCard key={m.label} label={m.label} value={m.value} hint={m.hint} tone={m.tone} />
               ))}
@@ -426,17 +426,17 @@ export function TextBlock({
   const badge = KIND_LABEL[sectionKind];
 
   return (
-    <section className={`comet-section comet-section--${sectionKind}`} aria-label={title}>
-      <span className="comet-section__rail" aria-hidden />
-      <header className="comet-section__head">
-        <span className="comet-section__eyebrow">{badge}</span>
-        <h3 className="comet-section__title">{title}</h3>
+    <section className={`esc-section esc-section--${sectionKind}`} aria-label={title}>
+      <span className="esc-section__rail" aria-hidden />
+      <header className="esc-section__head">
+        <span className="esc-section__eyebrow">{badge}</span>
+        <h3 className="esc-section__title">{title}</h3>
       </header>
-      <div className="comet-section__body">
+      <div className="esc-section__body">
         {typeof body === 'string' || typeof body === 'number' ? (
           <CitedText text={String(body)} sources={sources} onCitationClick={onCitationClick} className="whitespace-pre-wrap" />
         ) : Array.isArray(body) ? (
-          <ul className="comet-list">
+          <ul className="esc-list">
             {body.map((item, i) => (
               <li key={i}>
                 {typeof item === 'string' ? (
@@ -497,7 +497,7 @@ export function RiskGauge({
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-500">{label}</p>
-      <p className="mt-1 text-xs font-medium text-slate-500">COMET Risk Assessment · higher score = higher risk</p>
+      <p className="mt-1 text-xs font-medium text-slate-500">ESC Risk Assessment · higher score = higher risk</p>
       <div className="mt-4 flex flex-wrap items-end gap-6">
         <div className="min-w-[10rem]">
           <p className="text-4xl font-extrabold tabular-nums text-slate-900">{Math.round(shown)}<span className="text-lg font-semibold text-slate-400">/100</span></p>

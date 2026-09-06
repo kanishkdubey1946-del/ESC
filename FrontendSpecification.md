@@ -1,4 +1,4 @@
-# Frontend Specification Document - COMET
+# Frontend Specification Document - ESC
 
 ## 1. Context
 
@@ -8,7 +8,7 @@ For a multi-agent orchestrator, the front-end user interface is not just a displ
 
 ## 2. Objective
 
-The objective of this document is to define the design system, component guidelines, layout structures, and behavioral animations for the COMET React web client. It sets strict color palettes, typographic hierarchies, responsive grid boundaries, accessibility (WCAG 2.1) compliance standards, and interface styling rules. This ensures a consistent, high-fidelity experience that looks modern, clean, and intuitive.
+The objective of this document is to define the design system, component guidelines, layout structures, and behavioral animations for the ESC React web client. It sets strict color palettes, typographic hierarchies, responsive grid boundaries, accessibility (WCAG 2.1) compliance standards, and interface styling rules. This ensures a consistent, high-fidelity experience that looks modern, clean, and intuitive.
 
 ---
 
@@ -30,7 +30,7 @@ The objective of this document is to define the design system, component guideli
 ## 4. Detailed Explanation
 
 ### 4.1 UI Design System & Tokens
-COMET uses a dark-mode first design system inspired by modern IDEs and space-themed dashboards, featuring glassmorphism elements, thin neon borders, and glowing states.
+ESC uses a dark-mode first design system inspired by modern IDEs and space-themed dashboards, featuring glassmorphism elements, thin neon borders, and glowing states.
 
 #### Colors (Tailwind Theme Tokens)
 - **Deep Space Background**: `bg-slate-950` (`#090D16`)

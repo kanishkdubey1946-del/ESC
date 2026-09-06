@@ -1,7 +1,7 @@
 # Design & Architecture Patterns
 
 ## Base Agent Pattern
-Every agent in the backend must inherit from the base class `COMETBaseAgent` and implement `execute(self, shared_context: dict) -> dict`.
+Every agent in the backend must inherit from the base class `ESCBaseAgent` and implement `execute(self, shared_context: dict) -> dict`.
 
 ## Client State Management
 * React context handles Global Auth State.

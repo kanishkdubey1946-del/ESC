@@ -1,5 +1,5 @@
 """
-Centralized, backend-only LLM client for Project COMET.
+Centralized, backend-only LLM client for Project ESC.
 
 Security:
 - Reads provider API keys only from server environment / backend .env
@@ -36,7 +36,7 @@ from openai import (
 # Ensure backend/.env is loaded even if this module is imported first.
 load_dotenv(Path(__file__).resolve().parents[1] / ".env")
 
-logger = logging.getLogger("comet.openai")
+logger = logging.getLogger("esc.openai")
 
 # ─── Environment / model configuration (read at call time) ──────────────────
 
@@ -452,7 +452,7 @@ async def _complete_openrouter(
                 "Content-Type": "application/json",
                 "Authorization": f"Bearer {key}",
                 "HTTP-Referer": "http://localhost:5173",
-                "X-Title": "COMET",
+                "X-Title": "ESC",
             },
             json=payload,
         )

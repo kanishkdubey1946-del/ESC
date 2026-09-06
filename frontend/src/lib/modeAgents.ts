@@ -1,7 +1,4 @@
-import {
-  Award, BarChart3, Code2, FileText, Megaphone, Search,
-  Target, TrendingUp, type LucideIcon,
-} from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 import { getStudentSpecialists, type StudentSpecialist } from './studentSpecialists';
 
 export type WorkspaceMode = 'student' | 'playground';
@@ -24,17 +21,6 @@ export type MarketplaceSpecialist = StudioAgent & {
   tryPrompt: string;
   systemPrompt: string;
 };
-
-export const BUSINESS_AGENTS: StudioAgent[] = [
-  { id: 'research', name: 'Research Analyst', responsibility: 'Validate the problem, audience, market and evidence.', icon: Search, dependencies: [] },
-  { id: 'strategy', name: 'Business Strategist', responsibility: 'Create the business model and go-to-market plan.', icon: TrendingUp, dependencies: ['research'] },
-  { id: 'market', name: 'Market Analyst', responsibility: 'Evaluate market size, competitors and demand signals.', icon: BarChart3, dependencies: ['research'] },
-  { id: 'finance', name: 'Finance Analyst', responsibility: 'Model costs, pricing, revenue and financial risks.', icon: Target, dependencies: ['strategy'] },
-  { id: 'marketing', name: 'Marketing Strategist', responsibility: 'Create positioning, launch and acquisition plans.', icon: Megaphone, dependencies: ['research'] },
-  { id: 'development', name: 'Development Planner', responsibility: 'Design technical architecture and implementation plan.', icon: Code2, dependencies: ['strategy'] },
-  { id: 'content', name: 'Content Strategist', responsibility: 'Create communication and content plans.', icon: FileText, dependencies: ['strategy'] },
-  { id: 'pitch', name: 'Pitch & Recommendation', responsibility: 'Synthesize all outputs into a decision-ready pitch.', icon: Award, dependencies: ['research', 'strategy'] },
-];
 
 function toStudioAgent(specialist: StudentSpecialist, prefix = ''): StudioAgent {
   return {
@@ -78,13 +64,13 @@ export function resolveAgentIdForApi(mode: WorkspaceMode, agentId: string): stri
 }
 
 export function sessionStorageKey(mode: WorkspaceMode): string {
-  return `comet.session.${mode}.v1`;
+  return `esc.session.${mode}.v1`;
 }
 
 export type SpecialistLaunch = { agentId: string; prompt: string };
 
 function specialistLaunchKey(mode: WorkspaceMode) {
-  return `comet.specialist-launch.${mode}.v1`;
+  return `esc.specialist-launch.${mode}.v1`;
 }
 
 /** Queue a marketplace selection until the existing mode chat mounts. */

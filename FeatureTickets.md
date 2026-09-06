@@ -1,14 +1,14 @@
-# Feature Tickets Document - COMET
+# Feature Tickets Document - ESC
 
 ## 1. Context
 
-To build COMET systematically from scratch, the development roadmap must be decomposed into granular, self-contained feature tickets. Each ticket serves as an independent, buildable unit of work that ensures code logic remains cohesive and testable. Defining clear dependencies and specific instructions prevents architectural drift and simplifies implementation for developer agents.
+To build ESC systematically from scratch, the development roadmap must be decomposed into granular, self-contained feature tickets. Each ticket serves as an independent, buildable unit of work that ensures code logic remains cohesive and testable. Defining clear dependencies and specific instructions prevents architectural drift and simplifies implementation for developer agents.
 
 ---
 
 ## 2. Objective
 
-The objective of this document is to map out the exact development tickets needed to implement the COMET platform from the baseline up. Each ticket details its requirements, priority, complexity, verification notes, dependencies, and contains a comprehensive implementation prompt. This allows developers or AI subagents to tackle tickets sequentially with clear direction and zero ambiguity.
+The objective of this document is to map out the exact development tickets needed to implement the ESC platform from the baseline up. Each ticket details its requirements, priority, complexity, verification notes, dependencies, and contains a comprehensive implementation prompt. This allows developers or AI subagents to tackle tickets sequentially with clear direction and zero ambiguity.
 
 ---
 
@@ -83,9 +83,9 @@ The objective of this document is to map out the exact development tickets neede
 
 ### Ticket 4: Base Agent and Google ADK Integration
 - **Feature**: Multi-Agent Core Engine
-- **Description**: Integrate the Google ADK (Agent Development Kit). Define the abstract class `COMETBaseAgent` that configures Gemini 2.5 Flash execution parameters and structures the prompt interface.
+- **Description**: Integrate the Google ADK (Agent Development Kit). Define the abstract class `ESCBaseAgent` that configures Gemini 2.5 Flash execution parameters and structures the prompt interface.
 - **Acceptance Criteria**:
-  1. All agents extend the `COMETBaseAgent` parent class.
+  1. All agents extend the `ESCBaseAgent` parent class.
   2. Agents accept a shared dictionary context and return standard outputs.
   3. Gemini 2.5 Flash execution uses `temperature=0.4` by default.
 - **Dependencies**: Ticket 3
@@ -94,14 +94,14 @@ The objective of this document is to map out the exact development tickets neede
 - **Testing Notes**: Instantiate a mock agent class and verify it successfully queries Gemini and returns output.
 - **Implementation Prompt**:
   ```text
-  Create app/agents/base.py containing the abstract class COMETBaseAgent. Inject the Google ADK configuration and Gemini 2.5 Flash model references. Build default execution parameters (temperature=0.4, max_output_tokens=4000) and structure error handling for API timeouts.
+  Create app/agents/base.py containing the abstract class ESCBaseAgent. Inject the Google ADK configuration and Gemini 2.5 Flash model references. Build default execution parameters (temperature=0.4, max_output_tokens=4000) and structure error handling for API timeouts.
   ```
 
 ---
 
 ### Ticket 5: Research Agent Specific Prompt & Tool Integration
 - **Feature**: Research Agent Implementation
-- **Description**: Build the `ResearchAgent` class extending `COMETBaseAgent`. Configure its system prompt to analyze business concepts, perform competitor analysis, estimate TAM/SAM/SOM, and compile a structured Markdown report.
+- **Description**: Build the `ResearchAgent` class extending `ESCBaseAgent`. Configure its system prompt to analyze business concepts, perform competitor analysis, estimate TAM/SAM/SOM, and compile a structured Markdown report.
 - **Acceptance Criteria**:
   1. Outputs contain a structured JSON payload with keys: `report`, `competitors`, and `tam_sam_som`.
   2. Competitors are structured as a list of dictionaries containing name, strengths, and weaknesses.
@@ -329,7 +329,7 @@ graph TD
 
 ## 7. Acceptance Criteria (System Level)
 
-To declare the COMET platform implementation fully complete:
+To declare the ESC platform implementation fully complete:
 1. **End-to-End Orchestration**: A user inputting a business idea must trigger a sequential execution pipeline of all 5 agents (Research -> Strategy -> Pitch/Dev/Content) and receive outputs within 5 minutes.
 2. **Context Integrity**: The output of preceding agents must validate against structural schemas and be consumed in subsequent agent prompts.
 3. **No Cross-User Context Leaks**: Multi-tenant database separation must prevent reading/writing to other users' workspaces.

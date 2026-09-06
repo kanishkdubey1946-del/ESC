@@ -88,7 +88,7 @@ export function agentOutputToText(
   options?: { projectName?: string; generatedAt?: string; sources?: SourceRecord[] },
 ): string {
   const lines: string[] = [];
-  lines.push(options?.projectName || 'COMET');
+  lines.push(options?.projectName || 'ESC');
   lines.push(agentName);
   if (options?.generatedAt) lines.push(`Generated: ${formatRetrievedDate(options.generatedAt)}`);
   lines.push('');
@@ -192,7 +192,7 @@ export function downloadAgentOutput(
     return { ok: false, error: 'No output available to download.' };
   }
   const text = agentOutputToText(agentName, result.data, {
-    projectName: 'COMET',
+    projectName: 'ESC',
     generatedAt: result.timestamp,
     sources,
   });
@@ -200,7 +200,7 @@ export function downloadAgentOutput(
 
   const stamp = dateStamp(result.timestamp);
   const label = FILE_LABELS[agentId] || `${agentId}_output`;
-  const base = `COMET_${label}_${stamp}`;
+  const base = `ESC_${label}_${stamp}`;
 
   // Content: prefer TXT package; Development: real HTML if present, else Markdown; others PDF
   if (agentId === 'content') {
@@ -215,7 +215,7 @@ export function downloadAgentOutput(
     if (htmlCandidate) {
       const html = /<!doctype|<html/i.test(htmlCandidate)
         ? htmlCandidate
-        : `<!DOCTYPE html><html><head><meta charset="utf-8"><title>COMET Landing</title></head><body>${htmlCandidate}</body></html>`;
+        : `<!DOCTYPE html><html><head><meta charset="utf-8"><title>ESC Landing</title></head><body>${htmlCandidate}</body></html>`;
       downloadBlob(new Blob([html], { type: 'text/html;charset=utf-8' }), `${base}.html`);
       return { ok: true };
     }

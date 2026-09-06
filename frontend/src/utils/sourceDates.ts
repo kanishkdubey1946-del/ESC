@@ -1,5 +1,5 @@
 /**
- * Format source dates for COMET UI.
+ * Format source dates for ESC UI.
  * Only formats values that parse as real dates from backend metadata.
  * Never invents or substitutes today's date as a publication date.
  */

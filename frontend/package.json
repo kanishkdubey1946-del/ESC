@@ -11,6 +11,9 @@
   },
   "dependencies": {
     "@insforge/sdk": "^1.4.2",
+    "@react-three/drei": "^10.7.8",
+    "@react-three/fiber": "^9.7.0",
+    "clsx": "^2.1.1",
     "docx": "^9.7.1",
     "framer-motion": "^12.42.0",
     "jspdf": "^4.2.1",
@@ -20,7 +23,10 @@
     "react-dom": "^19.2.7",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.18.0",
-    "remark-gfm": "^4.0.1"
+    "remark-gfm": "^4.0.1",
+    "tailwind-merge": "^3.6.0",
+    "thinking-orbs": "^0.3.1",
+    "three": "^0.185.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.1",

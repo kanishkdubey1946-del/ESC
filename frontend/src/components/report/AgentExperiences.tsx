@@ -49,7 +49,7 @@ type ExpProps = {
 
 export function ResearchExperience({ data, sources, onCitationClick }: ExpProps) {
   const r = asRecord(data);
-  const score = num(r.opportunityScore ?? r.cometAnalyticalScore);
+  const score = num(r.opportunityScore ?? r.escAnalyticalScore);
   const competition = str(r.competitionLevel);
   const confidence = str(r.researchConfidence || r.evidenceStatus);
 
@@ -81,7 +81,7 @@ export function ResearchExperience({ data, sources, onCitationClick }: ExpProps)
     score != null ? {
       label: 'Opportunity score',
       value: (<>{Math.round(score)} <span className="text-sm text-slate-500">/100</span></>) as ReactNode,
-      hint: str(r.opportunityScoreNote) || 'COMET assessment from evidence factors — not an external statistic',
+      hint: str(r.opportunityScoreNote) || 'ESC assessment from evidence factors — not an external statistic',
       tone: 'primary' as const,
     } : null,
     competition ? {
@@ -99,7 +99,7 @@ export function ResearchExperience({ data, sources, onCitationClick }: ExpProps)
     num(r.riskScore) != null ? {
       label: 'Risk level',
       value: `${Math.round(num(r.riskScore)!)}/100` as ReactNode,
-      hint: 'Higher = more risk (COMET assessment)',
+      hint: 'Higher = more risk (ESC assessment)',
       tone: (num(r.riskScore)! >= 60 ? 'danger' : num(r.riskScore)! >= 30 ? 'warn' : 'success') as 'danger' | 'warn' | 'success',
     } : null,
   ].filter(Boolean) as Array<{ label: string; value: ReactNode; hint?: string; tone?: 'default' | 'primary' | 'success' | 'warn' | 'danger' }>;
@@ -178,7 +178,7 @@ export function ResearchExperience({ data, sources, onCitationClick }: ExpProps)
               <div className="grid gap-3 sm:grid-cols-2">
                 {score != null && (
                   <MetricCard
-                    label="COMET Opportunity Assessment"
+                    label="ESC Opportunity Assessment"
                     tone="primary"
                     value={<>{Math.round(score)} <span className="text-base font-semibold text-slate-500">/ 100</span></>}
                     hint={<ProgressBar value={score} />}
@@ -189,7 +189,7 @@ export function ResearchExperience({ data, sources, onCitationClick }: ExpProps)
               {factorBars.length > 0 && (
                 <ValidBarChart title="Score factors (from model calculation)" items={factorBars} unit="pts" />
               )}
-              <TextBlock title="Score methodology" body={r.opportunityScoreNote || 'Score is a COMET analytical assessment when factors are provided — not an external verified statistic.'} sources={sources} onCitationClick={onCitationClick} />
+              <TextBlock title="Score methodology" body={r.opportunityScoreNote || 'Score is a ESC analytical assessment when factors are provided — not an external verified statistic.'} sources={sources} onCitationClick={onCitationClick} />
               {num(r.riskScore) != null && (
                 <RiskGauge
                   score={num(r.riskScore)!}
@@ -398,19 +398,19 @@ export function DevelopmentExperience({ data, sources, onCitationClick }: ExpPro
               <TextBlock title="8. Deployment" body={r.infrastructureAnalysis || r.deploymentPlan} sources={sources} onCitationClick={onCitationClick} kind="action" />
               <TextBlock title="9. Testing plan" body={r.testingPlan || r.dataLimitations} sources={sources} onCitationClick={onCitationClick} kind="default" />
               <div className="space-y-3">
-                <p className="comet-subsection">10. Launch roadmap</p>
+                <p className="esc-subsection">10. Launch roadmap</p>
                 {launchPhases.map((p) => (
                   <TextBlock key={p.title} title={p.title} body={typeof p.body === 'string' || isNonEmpty(p.body) ? p.body : `Complete ${p.title} using your plan.`} sources={sources} onCitationClick={onCitationClick} kind="action" />
                 ))}
               </div>
               {phases.length > 0 && (
-                <div className="comet-section comet-section--action">
-                  <span className="comet-section__rail" aria-hidden />
-                  <header className="comet-section__head">
-                    <span className="comet-section__eyebrow">Recommended action</span>
-                    <h3 className="comet-section__title">Agent timeline</h3>
+                <div className="esc-section esc-section--action">
+                  <span className="esc-section__rail" aria-hidden />
+                  <header className="esc-section__head">
+                    <span className="esc-section__eyebrow">Recommended action</span>
+                    <h3 className="esc-section__title">Agent timeline</h3>
                   </header>
-                  <div className="comet-section__body">
+                  <div className="esc-section__body">
                     <TimelineList items={phases} sources={sources} onCitationClick={onCitationClick} />
                   </div>
                 </div>
@@ -485,7 +485,7 @@ function slideBodyToBullets(body: unknown): string[] {
 export function PitchExperience({ data, sources, onCitationClick }: ExpProps) {
   const r = asRecord(data);
   const slides = useMemo(() => buildDeckSlides(asRecord(data)), [data]);
-  const deckTitle = str(r.presentationTitle || r.title || r.projectName || r.executiveSummary).slice(0, 80) || 'COMET Presentation';
+  const deckTitle = str(r.presentationTitle || r.title || r.projectName || r.executiveSummary).slice(0, 80) || 'ESC Presentation';
   const [idx, setIdx] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [showNotes, setShowNotes] = useState(true);

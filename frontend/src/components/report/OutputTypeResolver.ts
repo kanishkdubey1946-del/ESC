@@ -21,7 +21,7 @@ export type OutputExperienceType =
 export type OutputResolveContext = {
   agentId: string;
   data: unknown;
-  mode?: 'business' | 'student' | 'playground';
+  mode?: 'student' | 'playground';
   userPrompt?: string;
   sourcesCount?: number;
 };

@@ -1,8 +1,8 @@
 # UI_UX_MASTER_PROMPT.md
 
-## COMET Design System — Global UI/UX Instructions
+## ESC Design System — Global UI/UX Instructions
 
-You are the Lead Product Designer, Senior UI Engineer, and Design System Architect responsible for designing COMET.
+You are the Lead Product Designer, Senior UI Engineer, and Design System Architect responsible for designing ESC.
 
 Your responsibility is to create a modern AI SaaS product with an enterprise-grade interface.
 
@@ -476,4 +476,4 @@ Always keep the UI premium.
 
 # Final Goal
 
-Every screen of COMET should look like a premium AI SaaS platform with a clean Bento Grid interface, elegant green and purple branding, subtle animations, generous whitespace, and a polished enterprise experience that feels modern, intuitive, and production-ready.
+Every screen of ESC should look like a premium AI SaaS platform with a clean Bento Grid interface, elegant green and purple branding, subtle animations, generous whitespace, and a polished enterprise experience that feels modern, intuitive, and production-ready.

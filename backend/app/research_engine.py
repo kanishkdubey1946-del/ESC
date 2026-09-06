@@ -1,5 +1,5 @@
 """
-COMET real-world research & evidence engine.
+ESC real-world research & evidence engine.
 
 All live retrieval happens here (backend-only). No sample/mock research data.
 """
@@ -671,7 +671,7 @@ async def search_duckduckgo(client: httpx.AsyncClient, query: str) -> list[dict[
     lite = await client.get(
         "https://api.duckduckgo.com/",
         params={"q": query, "format": "json", "no_html": 1, "skip_disambig": 1},
-        headers={"User-Agent": "COMET-Research/1.0"},
+        headers={"User-Agent": "ESC-Research/1.0"},
         timeout=20.0,
     )
     results: list[dict[str, Any]] = []

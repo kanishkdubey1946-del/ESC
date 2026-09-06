@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, Check, Globe, Loader2, X } from 'lucide-react';
+import { AlertCircle, Check, Globe, X } from 'lucide-react';
+import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import { authenticatedHeaders } from '../lib/localAuth';
 import { saveWorkspaceDocument, type WorkspaceDocument } from '../lib/workspaceMemory';
 

@@ -33,7 +33,7 @@ export function ResearchDashboard({
 }) {
   const r = asRecord(data);
   const [showScore, setShowScore] = useState(false);
-  const score = num(r.opportunityScore ?? r.cometAnalyticalScore);
+  const score = num(r.opportunityScore ?? r.escAnalyticalScore);
   const competition = str(r.competitionLevel);
   const confidence = str(r.researchConfidence || r.evidenceStatus);
   const scoreFactors = Array.isArray(r.opportunityScoreFactors) ? r.opportunityScoreFactors : null;
@@ -58,39 +58,39 @@ export function ResearchDashboard({
   return (
     <div className="space-y-4">
       {/* KPI row — metric hierarchy */}
-      <div className="comet-metric-grid">
+      <div className="esc-metric-grid">
         {competition && (
-          <div className="comet-metric border-slate-200">
-            <p className="comet-metric__label">Competition level</p>
-            <p className={`comet-metric__value ${
+          <div className="esc-metric border-slate-200">
+            <p className="esc-metric__label">Competition level</p>
+            <p className={`esc-metric__value ${
               /very high|high/i.test(competition) ? 'text-rose-600'
                 : /moderate|medium/i.test(competition) ? 'text-amber-600'
                   : 'text-emerald-600'
             }`}>{competition}</p>
             {str(r.competitionRationale) && (
-              <p className="comet-metric__hint">{cite(str(r.competitionRationale))}</p>
+              <p className="esc-metric__hint">{cite(str(r.competitionRationale))}</p>
             )}
           </div>
         )}
 
         {score != null && (
-          <div className="comet-metric border-primary-200 bg-primary-50/40 sm:col-span-1">
-            <p className="comet-metric__label">COMET Opportunity Assessment</p>
-            <p className="comet-metric__value">{Math.round(score)} <span className="text-base font-semibold text-slate-500">/ 100</span></p>
+          <div className="esc-metric border-primary-200 bg-primary-50/40 sm:col-span-1">
+            <p className="esc-metric__label">ESC Opportunity Assessment</p>
+            <p className="esc-metric__value">{Math.round(score)} <span className="text-base font-semibold text-slate-500">/ 100</span></p>
             <div className="mt-2 h-2 overflow-hidden rounded-full bg-white">
               <div className="h-full rounded-full bg-primary-500" style={{ width: `${Math.min(100, Math.max(0, score))}%` }} />
             </div>
             {isPreliminary && (
               <p className="mt-2 text-[11px] font-semibold text-amber-700">Preliminary estimate — model analysis, not a verified external statistic</p>
             )}
-            {scoreNote && <p className="comet-metric__hint">{cite(scoreNote)}</p>}
+            {scoreNote && <p className="esc-metric__hint">{cite(scoreNote)}</p>}
             {scoreFactors && scoreFactors.length > 0 && (
               <button type="button" onClick={() => setShowScore(v => !v)} className="mt-2 inline-flex items-center gap-1 text-[11px] font-semibold text-primary-700">
                 <Info className="h-3 w-3" /> How was this calculated? {showScore ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
               </button>
             )}
             {showScore && scoreFactors && (
-              <ul className="comet-list mt-2">
+              <ul className="esc-list mt-2">
                 {scoreFactors.map((f, i) => {
                   const row = f && typeof f === 'object' ? f as Record<string, unknown> : { factor: String(f) };
                   return (
@@ -108,14 +108,14 @@ export function ResearchDashboard({
         )}
 
         {confidence && (
-          <div className="comet-metric border-slate-200">
-            <p className="comet-metric__label">Research confidence</p>
-            <p className="comet-metric__value text-xl">{confidence}</p>
+          <div className="esc-metric border-slate-200">
+            <p className="esc-metric__label">Research confidence</p>
+            <p className="esc-metric__value text-xl">{confidence}</p>
             {str(r.researchConfidenceNote) && (
-              <p className="comet-metric__hint">{cite(str(r.researchConfidenceNote))}</p>
+              <p className="esc-metric__hint">{cite(str(r.researchConfidenceNote))}</p>
             )}
             {sources && (
-              <p className="comet-metric__hint">{sources.length} source(s) in evidence pack</p>
+              <p className="esc-metric__hint">{sources.length} source(s) in evidence pack</p>
             )}
           </div>
         )}
@@ -347,7 +347,7 @@ function ContentCard({
       savedAt: new Date().toISOString(),
     };
     try {
-      const key = 'comet.content.saved.v1';
+      const key = 'esc.content.saved.v1';
       const prev = JSON.parse(localStorage.getItem(key) || '[]') as unknown[];
       const list = Array.isArray(prev) ? prev : [];
       list.unshift(payload);
@@ -359,7 +359,7 @@ function ContentCard({
       window.setTimeout(() => setSavedNote(''), 2500);
     }
     downloadTextFile(
-      `COMET_${card.platform.replace(/\s+/g, '_')}_post.txt`,
+      `ESC_${card.platform.replace(/\s+/g, '_')}_post.txt`,
       [
         `Platform: ${card.platform}`,
         `Type: ${card.contentType}`,
@@ -377,7 +377,7 @@ function ContentCard({
 
   const handleDownload = () => {
     downloadTextFile(
-      `COMET_${card.platform.replace(/\s+/g, '_')}_${card.id}.txt`,
+      `ESC_${card.platform.replace(/\s+/g, '_')}_${card.id}.txt`,
       fullPost || caption || hook || 'No content',
     );
     flash('Post downloaded');

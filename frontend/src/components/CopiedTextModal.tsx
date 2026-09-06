@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import { AlertCircle, Check, FileText, Loader2, X } from 'lucide-react';
+import { AlertCircle, Check, FileText, X } from 'lucide-react';
+import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import { saveWorkspaceDocument, type WorkspaceDocument } from '../lib/workspaceMemory';
 
 interface CopiedTextModalProps {

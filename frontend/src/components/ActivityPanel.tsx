@@ -1,4 +1,5 @@
-import { Activity, CheckCircle2, Clock3, Database, Loader2, Sparkles } from 'lucide-react';
+import { Activity, CheckCircle2, Clock3, Database, Sparkles } from 'lucide-react';
+import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import type { AgentStatus } from '../types/agents';
 
 const timeline = [

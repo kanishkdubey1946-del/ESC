@@ -1,14 +1,14 @@
-# Technical Architecture Document - COMET
+# Technical Architecture Document - ESC
 
 ## 1. Context
 
-COMET is a multi-agent orchestration platform that requires a highly responsive frontend for visualizing real-time agent output and a stateless, scale-to-zero backend to execute complex agent workloads. The technical architecture must bridges these systems, managing long-lived agent runtimes (via FastAPI and Server-Sent Events) and persistent multi-agent states (via Firebase Firestore).
+ESC is a multi-agent orchestration platform that requires a highly responsive frontend for visualizing real-time agent output and a stateless, scale-to-zero backend to execute complex agent workloads. The technical architecture must bridges these systems, managing long-lived agent runtimes (via FastAPI and Server-Sent Events) and persistent multi-agent states (via Firebase Firestore).
 
 ---
 
 ## 2. Objective
 
-The objective of this document is to define the system-level engineering blueprints for COMET. It details the complete technology stack, Folder structures, Firestore database schemas, API contracts, state management, security layers, deployment guidelines, and optimization plans. This ensures that the codebase remains modular, performant, and secure under high request concurrency.
+The objective of this document is to define the system-level engineering blueprints for ESC. It details the complete technology stack, Folder structures, Firestore database schemas, API contracts, state management, security layers, deployment guidelines, and optimization plans. This ensures that the codebase remains modular, performant, and secure under high request concurrency.
 
 ---
 
@@ -315,7 +315,7 @@ Downstream AI backend developers must construct the agent routers as follows:
   from abc import ABC, abstractmethod
   from google.adk import Agent  # Assumed ADK Import structure
 
-  class COMETBaseAgent(ABC):
+  class ESCBaseAgent(ABC):
       def __init__(self, name: str, system_instruction: str):
           self.name = name
           self.system_instruction = system_instruction

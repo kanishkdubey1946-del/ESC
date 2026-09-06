@@ -1,5 +1,5 @@
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const tokenKey = 'comet-local-session';
+const tokenKey = 'esc-local-session';
 
 export interface LocalUser { id: string; name: string; email: string; }
 interface AuthResponse { token: string; user: LocalUser; }

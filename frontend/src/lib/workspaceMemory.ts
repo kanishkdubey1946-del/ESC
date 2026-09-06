@@ -3,7 +3,7 @@ import type { AgentResult } from '../types/agents';
 export type WorkspaceDocument = { id: string; name: string; type: string; text: string; addedAt: string };
 export type WorkspaceVersion = { id: string; createdAt: string; goal: string; outputs: Record<string, AgentResult<unknown>> };
 
-const STORAGE_KEY = 'comet.workspace.v1';
+const STORAGE_KEY = 'esc.workspace.v1';
 const MAX_DOCUMENT_TEXT = 45_000;
 const MAX_CONTEXT_PER_DOCUMENT = 3_000;
 
@@ -19,6 +19,7 @@ export function saveWorkspaceDocument(document: WorkspaceDocument) {
   const current = loadWorkspace();
   const documents = [...current.documents.filter(item => item.id !== document.id), { ...document, text: document.text.slice(0, MAX_DOCUMENT_TEXT) }].slice(-8);
   localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...current, documents }));
+  window.dispatchEvent(new Event('storage'));
   return documents;
 }
 

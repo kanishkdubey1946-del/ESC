@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-  Check, ChevronDown, ChevronUp, ExternalLink, Globe, Loader2, Search, AlertCircle,
+  Check, ChevronDown, ChevronUp, ExternalLink, Globe, Search, AlertCircle,
 } from 'lucide-react';
+import { OrbLoader as Loader2 } from '../ui/OrbLoader';
 import type { ResearchEvent, SourceRecord } from '../../types/sources';
 
 function faviconUrl(domain: string) {

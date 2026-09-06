@@ -1,4 +1,4 @@
-"""SQLite connection and idempotent schema migrations for ESC."""
+﻿"""SQLite connection and idempotent schema migrations for ESC."""
 
 from __future__ import annotations
 
@@ -11,7 +11,7 @@ from typing import Iterator
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DATABASE_PATH = Path(os.getenv("COMET_DATABASE_PATH", ROOT / "comet.db"))
+DATABASE_PATH = Path(os.getenv("ESC_DATABASE_PATH", ROOT / "esc.db"))
 
 
 def utc_now() -> datetime:

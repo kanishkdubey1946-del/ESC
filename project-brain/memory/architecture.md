@@ -1,4 +1,4 @@
-# COMET Technical Architecture
+# ESC Technical Architecture
 
 ## High-Level Diagram
 ```text
