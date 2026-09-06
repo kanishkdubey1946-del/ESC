@@ -1,12 +1,17 @@
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
-import earthMapUrl from "@/assets/earth-map.jpg";
+import earthNightUrl from "@/assets/earth-night.png";
 
 const EARTH_RADIUS = 2.35;
 const ASTEROID_COUNT = 110;
 
-function useImageTexture(src: string) {
+// Globe center/radius inside the source photo (286x232), used to crop
+// a square around the disc so the circle mesh shows only the planet.
+const CROP_CENTER = { x: 148, y: 118 };
+const CROP_RADIUS = 96;
+
+function useCroppedEarthTexture(src: string) {
   const [map, setMap] = useState<THREE.Texture | null>(null);
 
   useEffect(() => {
@@ -14,7 +19,31 @@ function useImageTexture(src: string) {
     const img = new Image();
     img.onload = () => {
       if (cancelled) return;
-      const texture = new THREE.Texture(img);
+      const size = CROP_RADIUS * 2;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(
+        img,
+        CROP_CENTER.x - CROP_RADIUS,
+        CROP_CENTER.y - CROP_RADIUS,
+        size,
+        size,
+        0,
+        0,
+        size,
+        size,
+      );
+      // Soft alpha falloff at the rim so the disc blends into the sky
+      const grad = ctx.createRadialGradient(size / 2, size / 2, size * 0.44, size / 2, size / 2, size / 2);
+      grad.addColorStop(0, "rgba(0,0,0,1)");
+      grad.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.globalCompositeOperation = "destination-in";
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, size, size);
+
+      const texture = new THREE.CanvasTexture(canvas);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.anisotropy = 8;
       texture.needsUpdate = true;
@@ -60,24 +89,29 @@ function createRockTexture() {
 }
 
 function Earth({ map }: { map: THREE.Texture }) {
-  const meshRef = useRef<THREE.Mesh>(null);
+  const groupRef = useRef<THREE.Group>(null);
 
-  useFrame((_, delta) => {
-    if (meshRef.current) meshRef.current.rotation.y += delta * 0.045;
+  // Keep the disc facing the camera even though the parent group rotates
+  useFrame(({ camera }) => {
+    const group = groupRef.current;
+    if (!group) return;
+    const invParent = new THREE.Quaternion();
+    group.parent?.getWorldQuaternion(invParent).invert();
+    group.quaternion.copy(camera.quaternion).premultiply(invParent);
   });
 
   return (
-    <group>
-      <mesh ref={meshRef}>
-        <sphereGeometry args={[EARTH_RADIUS, 96, 96]} />
-        <meshBasicMaterial map={map} toneMapped={false} />
+    <group ref={groupRef}>
+      <mesh>
+        <circleGeometry args={[EARTH_RADIUS, 64]} />
+        <meshBasicMaterial map={map} transparent toneMapped={false} depthWrite={false} />
       </mesh>
-      <mesh scale={1.045}>
+      <mesh scale={1.03}>
         <sphereGeometry args={[EARTH_RADIUS, 48, 48]} />
         <meshBasicMaterial
           color="#67b7ff"
           transparent
-          opacity={0.16}
+          opacity={0.1}
           side={THREE.BackSide}
           depthWrite={false}
         />
@@ -287,7 +321,7 @@ function Scene({ earthMap }: { earthMap: THREE.Texture }) {
 }
 
 export default function EarthScene() {
-  const earthMap = useImageTexture(earthMapUrl);
+  const earthMap = useCroppedEarthTexture(earthNightUrl);
 
   return (
     <Canvas
