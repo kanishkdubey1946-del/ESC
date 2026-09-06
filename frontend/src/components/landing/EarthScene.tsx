@@ -177,6 +177,66 @@ function AsteroidBelt({ rockMap }: { rockMap: THREE.Texture }) {
   );
 }
 
+function createAsteroidGeometry(seed: number) {
+  const geo = new THREE.IcosahedronGeometry(1, 3);
+  const pos = geo.attributes.position;
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    // Deterministic pseudo-noise so the lumpy shape is stable per render
+    const n =
+      Math.sin(v.x * 3.7 + seed) * Math.cos(v.y * 4.1 + seed * 1.7) +
+      Math.sin(v.z * 5.3 + seed * 2.3) * 0.6;
+    v.multiplyScalar(1 + n * 0.16);
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  geo.computeVertexNormals();
+  return geo;
+}
+
+type HeroAsteroidProps = {
+  rockMap: THREE.Texture;
+};
+
+function HeroAsteroid({ rockMap }: HeroAsteroidProps) {
+  const orbitRef = useRef<THREE.Group>(null);
+  const meshRef = useRef<THREE.Mesh>(null);
+  const geometry = useMemo(() => createAsteroidGeometry(7.31), []);
+  const angle = useRef(Math.PI * 0.55);
+
+  // Elliptical, inclined orbit sized so the asteroid sweeps in front of Earth
+  const ORBIT_X = 4.1;
+  const ORBIT_Z = 5.4;
+  const INCLINE = 0.42;
+  const SPEED = 0.22;
+
+  useFrame((_, delta) => {
+    angle.current += SPEED * delta;
+    const a = angle.current;
+
+    if (orbitRef.current) {
+      orbitRef.current.position.set(
+        Math.cos(a) * ORBIT_X,
+        Math.sin(a) * ORBIT_Z * Math.sin(INCLINE),
+        Math.sin(a) * ORBIT_Z * Math.cos(INCLINE),
+      );
+    }
+    if (meshRef.current) {
+      meshRef.current.rotation.x += delta * 0.55;
+      meshRef.current.rotation.y += delta * 0.32;
+      meshRef.current.rotation.z += delta * 0.18;
+    }
+  });
+
+  return (
+    <group ref={orbitRef}>
+      <mesh ref={meshRef} geometry={geometry} scale={0.48}>
+        <meshStandardMaterial map={rockMap} roughness={0.95} metalness={0.05} color="#a89684" />
+      </mesh>
+    </group>
+  );
+}
+
 function Stars() {
   const positions = useMemo(() => {
     const count = 1800;
@@ -220,6 +280,7 @@ function Scene({ earthMap }: { earthMap: THREE.Texture }) {
       <group ref={groupRef} position={[1.15, -0.1, 0]} rotation={[0.18, 0.4, 0]}>
         <Earth map={earthMap} />
         <AsteroidBelt rockMap={rockMap} />
+        <HeroAsteroid rockMap={rockMap} />
       </group>
     </>
   );
