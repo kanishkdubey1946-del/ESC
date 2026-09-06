@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import Globe from '../ui/globe';
 
 const fade = {
   initial: { opacity: 0, y: 18 },
@@ -169,17 +170,22 @@ export function HowItWorks() {
 export function FinalCTA({ onLaunch }: { onLaunch: () => void }) {
   return (
     <section className="hp-cta">
-      <motion.div {...fade} className="hp-cta-inner">
-        <h2>
-          Ready to study<br />
-          <span className="sp-grad">at the speed of thought?</span>
-        </h2>
-        <p>
-          Join thousands of students using ESC to study smarter, retain more, and score higher.
-        </p>
-        <button type="button" className="hp-btn primary big" onClick={onLaunch}>
-          Start Learning Free →
-        </button>
+      <motion.div {...fade} className="hp-cta-inner hp-cta-with-globe">
+        <div className="hp-cta-copy">
+          <h2>
+            Ready to study<br />
+            <span className="sp-grad">at the speed of thought?</span>
+          </h2>
+          <p>
+            Join thousands of students using ESC to study smarter, retain more, and score higher.
+          </p>
+          <button type="button" className="hp-btn primary big" onClick={onLaunch}>
+            Start Learning Free →
+          </button>
+        </div>
+        <div className="hp-cta-globe" aria-hidden>
+          <Globe />
+        </div>
       </motion.div>
     </section>
   );
