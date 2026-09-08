@@ -8,6 +8,7 @@ import AuthModal from '../components/AuthModal';
 import { useAuth } from '../auth/AuthProvider';
 import { GlowMenuBar } from '../components/ui/glow-menu';
 import { SonarGrid } from '../components/ui/sonar-grid';
+import BrandMark from '../components/ui/BrandMark';
 import '../styles/homepage.css';
 
 export default function LandingPage() {
@@ -40,7 +41,7 @@ export default function LandingPage() {
       {/* ── Nav ── */}
       <nav className={`hp-nav${scrolled ? ' scrolled' : ''}`} aria-label="Primary">
         <a className="hp-brand" href="#top" onClick={() => setMenuOpen(false)}>
-          <span className="hp-mark" aria-hidden />
+          <BrandMark className="hp-logo-mark" />
           <span>ESC</span>
         </a>
 

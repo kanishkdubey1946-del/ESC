@@ -1,10 +1,12 @@
+import BrandMark from '../ui/BrandMark';
+
 export default function HomeFooter() {
   return (
     <footer className="hp-footer">
       <div className="hp-footer-grid">
         <div>
           <a className="hp-brand" href="#top" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.6rem', fontWeight: 800, letterSpacing: '0.08em', color: '#fff' }}>
-            <span className="hp-mark" aria-hidden />
+            <BrandMark className="hp-logo-mark" />
             <span>ESC</span>
           </a>
           <p className="sp-brand-desc">

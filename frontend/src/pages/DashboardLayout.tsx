@@ -8,6 +8,7 @@ import SourceLibrary from '../components/SourceLibrary';
 import { AIStatus } from '../components/ui/AIStatus';
 import { GlowMenuBar, type GlowMenuItem } from '../components/ui/glow-menu';
 import ThemeToggle from '../components/ui/theme-toggle';
+import BrandMark from '../components/ui/BrandMark';
 import { useAuth } from '../auth/AuthProvider';
 import { queueSpecialistLaunch, type MarketplaceSpecialist, type WorkspaceMode } from '../lib/modeAgents';
 import { readConversations } from '../lib/assistantMemory';
@@ -98,7 +99,7 @@ export default function DashboardLayout() {
     <div className="flex min-w-0 flex-1 flex-col">
       <header className="esc-topbar">
         <div className="esc-topbar-dock"><GlowMenuBar items={dockItems} /></div>
-        <div className="flex min-w-0 items-center gap-3"><button className="esc-icon-button lg:hidden" aria-label="Open navigation" onClick={() => setMobileNav(true)}><Menu size={20} /></button><span className="hidden text-[12px] text-[#64626e] sm:inline">My workspace</span><span className="hidden text-[#45434c] sm:inline">/</span><h1 className="truncate text-[12px] font-medium text-[#d5d0df]">{titles[view]}</h1></div>
+        <div className="flex min-w-0 items-center gap-3"><button className="esc-icon-button lg:hidden" aria-label="Open navigation" onClick={() => setMobileNav(true)}><Menu size={20} /></button><BrandMark className="esc-mobile-brand lg:hidden" /><span className="hidden text-[12px] text-[#64626e] sm:inline">My workspace</span><span className="hidden text-[#45434c] sm:inline">/</span><h1 className="truncate text-[12px] font-medium text-[#d5d0df]">{titles[view]}</h1></div>
         <div className="flex items-center gap-3 sm:gap-5">
           <span className="hidden items-center gap-1.5 text-[10px] tracking-wide text-[#9690a2] xl:flex"><span className="h-1 w-1 rounded-full bg-[#c4dca5]" /> YOUR SPACE TO GROW</span>
           <div className="relative"><button className="esc-mode-button" aria-expanded={modeOpen} onClick={() => setModeOpen(!modeOpen)}>{mode === 'student' ? 'Student' : 'Playground'} <ChevronDown size={12} /></button>{modeOpen && <div className="esc-mode-menu">{(['student', 'playground'] as const).map(next => <button key={next} onClick={() => { setParams({ mode: next, view }); setConversationId(readConversations(owner, next)[0]?.id || crypto.randomUUID()); setModeOpen(false); }}>{next === 'student' ? 'Student workspace' : 'Playground'}</button>)}</div>}</div>

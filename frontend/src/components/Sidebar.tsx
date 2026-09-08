@@ -1,6 +1,7 @@
 import { ArrowUpRight, BookOpen, CalendarDays, ChartNoAxesCombined, ChevronLeft, CircleHelp, LayoutGrid, MessageCircle, Plus, Sparkles, X } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { AIStatus } from './ui/AIStatus';
+import BrandMark from './ui/BrandMark';
 
 export type WorkspaceView = 'chat' | 'overview' | 'planner' | 'analytics' | 'sources' | 'specialists' | 'studio';
 
@@ -25,7 +26,7 @@ export default function Sidebar({ view, onNavigate, onNewChat, displayName, onSe
   return <aside className="esc-sidebar">
     <div className="flex items-center justify-between px-5 pb-8 pt-7">
       <button className="flex items-center gap-3" onClick={() => onNavigate('chat')} aria-label="ESC AI companion home">
-        <span className="esc-brand-mark"><BookOpen size={19} strokeWidth={1.6} /></span>
+        <span className="esc-brand-mark"><BrandMark className="esc-brand-mark-image" /></span>
         <span className="text-[22px] font-semibold tracking-[-.06em] text-[#f0edf5]">esc<span className="text-[#b8a3ed]">.</span></span>
       </button>
       {onClose ? <button className="esc-icon-button lg:hidden" onClick={onClose} aria-label="Close navigation"><X size={18} /></button> : <ChevronLeft size={15} className="text-[#5f606b]" />}

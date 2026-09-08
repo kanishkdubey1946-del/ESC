@@ -103,20 +103,18 @@
   letter-spacing: 0.08em;
   color: var(--sp-ink);
 }
-.esc-home .hp-mark {
-  width: 1.9rem;
-  height: 1.9rem;
-  border-radius: 0.5rem;
-  background: linear-gradient(135deg, #a78bfa, #60a5fa);
-  box-shadow: 0 0 18px rgba(167,139,250,0.5);
-  position: relative;
+.esc-home .hp-logo-mark {
+  width: 2rem;
+  height: 2rem;
+  flex: none;
+  object-fit: contain;
+  filter: drop-shadow(0 0 9px rgba(91, 86, 224, 0.5)) drop-shadow(0 5px 8px rgba(0, 0, 0, 0.45));
+  transform: perspective(120px) rotateX(4deg) rotateY(-5deg);
+  transition: transform 180ms ease, filter 180ms ease;
 }
-.esc-home .hp-mark::after {
-  content: '';
-  position: absolute;
-  inset: 5px;
-  border-radius: 999px;
-  border: 2px solid rgba(255,255,255,0.85);
+.esc-home .hp-brand:hover .hp-logo-mark {
+  filter: drop-shadow(0 0 13px rgba(91, 86, 224, 0.68)) drop-shadow(0 7px 10px rgba(0, 0, 0, 0.48));
+  transform: perspective(120px) rotateX(0) rotateY(0) translateY(-1px);
 }
 .esc-home .hp-navlinks {
   display: none;
@@ -734,6 +732,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .esc-home .sp-marquee-track { animation: none; }
+  .esc-home .hp-logo-mark { transition: none; transform: none; }
 }
 
 /* ================================================================
