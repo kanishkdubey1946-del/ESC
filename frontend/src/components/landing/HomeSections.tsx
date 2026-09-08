@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { ArrowUpRight, BookOpen, CalendarDays, FileText, GitBranch, ListChecks, SlidersHorizontal } from 'lucide-react';
+import { ArrowUpRight, BookOpen, CalendarDays, GitBranch, Globe2, ListChecks, SlidersHorizontal } from 'lucide-react';
 import Globe from '../ui/globe';
 
 const fade = {
@@ -32,7 +32,7 @@ export function SpecialistMarquee() {
 const FEATURES = [
   { icon: BookOpen, title: 'Student Companion', text: 'Work through a difficult topic, ask a follow-up, and keep the explanation alongside your notes.' },
   { icon: SlidersHorizontal, title: 'Specialist Playground', text: 'Choose a specialist for the work at hand, from checking an argument to explaining a formula.' },
-  { icon: FileText, title: 'Notes and sources', text: 'Bring your own material. Ask questions, read a summary, and check the source behind an answer.' },
+  { icon: Globe2, title: 'Web research and sources', text: 'Search the web for current information or add PDFs, notes, links, and videos. Keep the evidence behind every answer.' },
   { icon: ListChecks, title: 'Practice and recall', text: 'Turn a topic into questions and flashcards. Find the gaps before you move on.' },
   { icon: GitBranch, title: 'Concept maps', text: 'Trace the relationships between ideas and see where each topic fits.' },
   { icon: CalendarDays, title: 'Study planning', text: 'Set your priorities and available time. Build a schedule you can return to and adjust.' },
@@ -65,10 +65,10 @@ export function ModesSection() {
 }
 
 const STEPS = [
-  { title: 'Bring your material', text: 'Add notes, a paper, or the question you want to work through.' },
-  { title: 'Choose your focus', text: 'Ask the companion directly or pick a specialist for a specific task.' },
-  { title: 'Work through the answer', text: 'Read the explanation, check its sources, and ask a follow-up.' },
-  { title: 'Put it into practice', text: 'Review with questions, flashcards, or a study plan.' },
+  { title: 'Start with a question', text: 'Ask directly, search the web, or add material you want ESC to use.' },
+  { title: 'Route the work', text: 'ESC coordinates the research, explanation, practice, and planning specialists you need.' },
+  { title: 'Review the evidence', text: 'Follow citations from web results and uploaded sources, then ask a follow-up.' },
+  { title: 'Turn it into progress', text: 'Continue with explanations, questions, flashcards, or an adaptive study plan.' },
 ];
 
 export function HowItWorks() {

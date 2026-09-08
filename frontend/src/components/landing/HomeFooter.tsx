@@ -10,8 +10,8 @@ export default function HomeFooter() {
             <span>ESC</span>
           </a>
           <p className="sp-brand-desc">
-            Enhanced Study Companion — 12 AI specialists working together
-            to help you learn, master, and excel in any subject.
+            Enhanced Study Companion — 12 AI specialists combining live web research
+            with your own sources to help you understand, practise, and plan.
           </p>
         </div>
 

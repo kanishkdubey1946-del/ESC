@@ -452,6 +452,13 @@
   color: rgba(162,216,192,0.68);
   font-size: 0.62rem;
 }
+.esc-home .hp-preview-ready > span {
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 50%;
+  background: #75c9a3;
+  box-shadow: 0 0 8px rgba(117,201,163,0.55);
+}
 .esc-home .hp-preview-thread {
   display: flex;
   flex-direction: column;

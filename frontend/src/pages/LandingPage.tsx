@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Check, FileText, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Globe2, Menu, Network, X } from 'lucide-react';
 import { FinalCTA, HowItWorks, ModesSection, SpecialistMarquee } from '../components/landing/HomeSections';
 import HomeFooter from '../components/landing/HomeFooter';
 import AuthModal from '../components/AuthModal';
@@ -106,15 +106,15 @@ export default function LandingPage() {
               <div className="hp-hero-copy">
                 <span className="hp-hero-eyebrow">
                   <span aria-hidden="true" />
-                  Your material. One clear workspace.
+                  Web research. Specialist agents. One workspace.
                 </span>
                 <h1>
                   Study<br />
                   <span className="sp-grad">Smarter.</span>
                 </h1>
                 <p>
-                  Ask questions, practise what matters, and build a study plan around
-                  the sources you already trust.
+                  Search the web, bring your own sources, and let specialist agents turn
+                  the results into explanations, practice, and a plan you can act on.
                 </p>
 
                 <div className="hp-hero-actions">
@@ -128,53 +128,53 @@ export default function LandingPage() {
 
                 <div className="hp-hero-meta" aria-label="Workspace highlights">
                   <div className="hp-hero-stat">
-                    <strong>Grounded answers</strong>
-                    <span>From your sources</span>
+                    <strong>Live research</strong>
+                    <span>Current web sources</span>
                   </div>
                   <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
-                    <strong>Active practice</strong>
-                    <span>Built for recall</span>
+                    <strong>Specialist agents</strong>
+                    <span>Matched to each task</span>
                   </div>
                   <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
-                    <strong>Adaptive plans</strong>
-                    <span>Made around you</span>
+                    <strong>Your material</strong>
+                    <span>Used when you add it</span>
                   </div>
                 </div>
               </div>
 
               <motion.aside
                 className="hp-study-preview"
-                aria-label="Example source-grounded study session"
+                aria-label="Example multi-agent web research session"
                 initial={{ opacity: 0, y: 22, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.72, delay: 0.14, ease: 'easeOut' }}
               >
                 <header className="hp-preview-header">
                   <div>
-                    <span>Study session</span>
-                    <strong>Cell biology</strong>
+                    <span>Research session</span>
+                    <strong>Parkinson&apos;s disease</strong>
                   </div>
                   <div className="hp-preview-status">
                     <ThinkingOrb state="searching" size={20} theme="dark" />
-                    <span>Using your source</span>
+                    <span>Searching the web</span>
                   </div>
                 </header>
 
                 <div className="hp-preview-source">
-                  <span className="hp-preview-file"><FileText size={15} aria-hidden="true" /></span>
+                  <span className="hp-preview-file"><Globe2 size={15} aria-hidden="true" /></span>
                   <div>
-                    <strong>Cell Structure — Chapter 4</strong>
-                    <span>PDF · 12 pages</span>
+                    <strong>Live web research</strong>
+                    <span>4 sources found · uploaded files optional</span>
                   </div>
-                  <span className="hp-preview-ready"><Check size={12} aria-hidden="true" /> Ready</span>
+                  <span className="hp-preview-ready"><span aria-hidden="true" /> Live</span>
                 </div>
 
                 <div className="hp-preview-thread">
                   <div className="hp-preview-question">
                     <span>You asked</span>
-                    <p>Why do cells need mitochondria?</p>
+                    <p>How is Parkinson&apos;s disease diagnosed?</p>
                   </div>
                   <div className="hp-preview-answer">
                     <span className="hp-preview-orb" aria-hidden="true">
@@ -183,20 +183,20 @@ export default function LandingPage() {
                     <div>
                       <span>ESC</span>
                       <p>
-                        Mitochondria convert energy from nutrients into ATP, the usable
-                        energy that powers most cellular activity.
+                        Research Scout is comparing current web sources while Concept
+                        Clarifier prepares a concise, cited explanation.
                       </p>
                       <div className="hp-preview-citations">
-                        <span>Page 6</span>
-                        <span>Page 8</span>
+                        <span>Web research</span>
+                        <span>Research trail</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
                 <footer className="hp-preview-footer">
-                  <span><Check size={13} aria-hidden="true" /> Grounded in your material</span>
-                  <span>Ask a follow-up</span>
+                  <span><Network size={13} aria-hidden="true" /> Specialists collaborating</span>
+                  <span>Web + uploaded sources</span>
                 </footer>
               </motion.aside>
             </motion.div>
