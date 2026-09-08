@@ -17,7 +17,7 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   try {
     response = await fetch(`${apiBaseUrl}${path}`, { headers: { 'Content-Type': 'application/json', ...options.headers }, ...options });
   } catch {
-    throw new Error('Local backend is not running. Start it with: python -m uvicorn app.main:app --reload --port 8000');
+    throw new Error(`Cannot reach the backend at ${apiBaseUrl}. Check that the backend is running at the configured address.`);
   }
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as { detail?: string } | null;

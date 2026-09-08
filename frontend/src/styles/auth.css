@@ -1,0 +1,15 @@
+.esc-auth { z-index: 200; color-scheme: dark; background: #07080dc9; }
+.esc-auth > section { max-height: calc(100dvh - 32px); overflow-y: auto; background: #19191f; border-color: #ffffff14; color: #f2f0f7; }
+.esc-auth [class*="text-slate-9"], .esc-auth [class*="text-slate-7"] { color: #e6dfef; }
+.esc-auth [class*="text-slate-6"], .esc-auth [class*="text-slate-5"], .esc-auth [class*="text-slate-4"] { color: #aaa3b5; }
+.esc-auth [class*="bg-primary-50"] { background: #b7a1f815; color: #cbb6f8; }
+.esc-auth input { background: #101114; border-color: #ffffff1a; color: #f2f0f7; }
+.esc-auth input::placeholder { color: #827b90; }
+.esc-auth input:focus { border-color: #b7a1f8; --tw-ring-color: #b7a1f815; }
+.esc-auth button:focus-visible { outline: 2px solid #b7a1f8; outline-offset: 3px; }
+.esc-auth button:hover { background-color: #ffffff08; }
+.esc-auth button[type=submit], .esc-auth form > button { background: #b7a1f8; color: #1b1426; }
+.esc-auth form > button:hover { background: #cbb6f8; }
+.esc-auth form > button:disabled { opacity: .55; }
+.esc-auth [role=alert] { background: #e48ab510; border-color: #e48ab530; color: #f1b5cb; }
+.esc-auth [class*="text-amber-"] { color: #eac39c; }

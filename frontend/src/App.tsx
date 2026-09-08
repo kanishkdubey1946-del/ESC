@@ -1,5 +1,6 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from './auth/AuthProvider';
 import RequireAuth from './auth/RequireAuth';
 import { AIStatus } from './components/ui/AIStatus';
@@ -10,7 +11,8 @@ const LunarGravityDemo = lazy(() => import('./components/ui/lunar-gravity-card-d
 
 function App() {
   return (
-    <AuthProvider><BrowserRouter>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem={false}>
+      <AuthProvider><BrowserRouter>
       <Suspense
         fallback={
           <div className="min-h-screen flex items-center justify-center bg-[#101114]">
@@ -25,7 +27,8 @@ function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
-    </BrowserRouter></AuthProvider>
+      </BrowserRouter></AuthProvider>
+    </ThemeProvider>
   );
 }
 

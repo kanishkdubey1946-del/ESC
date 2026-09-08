@@ -6,12 +6,13 @@ import earthNightUrl from "@/assets/earth-night.png";
 const EARTH_RADIUS = 2.35;
 const ASTEROID_COUNT = 110;
 
-// Globe center/radius inside the source photo (286x232), used to crop
-// a square around the disc so the circle mesh shows only the planet.
+// Globe center/radius inside the source photo (286x232). The photo is an
+// orthographic view of the globe, so we can unwrap it into a full
+// equirectangular map and spin a real sphere instead of a flat disc.
 const CROP_CENTER = { x: 148, y: 118 };
-const CROP_RADIUS = 96;
+const GLOBE_RADIUS_PX = 80;
 
-function useCroppedEarthTexture(src: string) {
+function useEarthPanoTexture(src: string) {
   const [map, setMap] = useState<THREE.Texture | null>(null);
 
   useEffect(() => {
@@ -19,31 +20,74 @@ function useCroppedEarthTexture(src: string) {
     const img = new Image();
     img.onload = () => {
       if (cancelled) return;
-      const size = CROP_RADIUS * 2;
-      const canvas = document.createElement("canvas");
-      canvas.width = size;
-      canvas.height = size;
-      const ctx = canvas.getContext("2d")!;
-      ctx.drawImage(
-        img,
-        CROP_CENTER.x - CROP_RADIUS,
-        CROP_CENTER.y - CROP_RADIUS,
-        size,
-        size,
-        0,
-        0,
-        size,
-        size,
-      );
-      // Soft alpha falloff at the rim so the disc blends into the sky
-      const grad = ctx.createRadialGradient(size / 2, size / 2, size * 0.44, size / 2, size / 2, size / 2);
-      grad.addColorStop(0, "rgba(0,0,0,1)");
-      grad.addColorStop(1, "rgba(0,0,0,0)");
-      ctx.globalCompositeOperation = "destination-in";
-      ctx.fillStyle = grad;
-      ctx.fillRect(0, 0, size, size);
+      const W = 1024;
+      const H = 512;
 
-      const texture = new THREE.CanvasTexture(canvas);
+      // Read the photo's pixels once for fast sampling
+      const srcCanvas = document.createElement("canvas");
+      srcCanvas.width = img.width;
+      srcCanvas.height = img.height;
+      const sctx = srcCanvas.getContext("2d")!;
+      sctx.drawImage(img, 0, 0);
+      const srcData = sctx.getImageData(0, 0, img.width, img.height).data;
+
+      // Bilinear sample so the upscaled pano keeps detail instead of blocks
+      const sample = (px: number, py: number) => {
+        const x0 = Math.max(0, Math.min(img.width - 1, Math.floor(px)));
+        const y0 = Math.max(0, Math.min(img.height - 1, Math.floor(py)));
+        const x1 = Math.min(img.width - 1, x0 + 1);
+        const y1 = Math.min(img.height - 1, y0 + 1);
+        const fx = px - Math.floor(px);
+        const fy = py - Math.floor(py);
+        const w00 = (1 - fx) * (1 - fy);
+        const w10 = fx * (1 - fy);
+        const w01 = (1 - fx) * fy;
+        const w11 = fx * fy;
+        const i00 = (y0 * img.width + x0) * 4;
+        const i10 = (y0 * img.width + x1) * 4;
+        const i01 = (y1 * img.width + x0) * 4;
+        const i11 = (y1 * img.width + x1) * 4;
+        return [
+          srcData[i00] * w00 + srcData[i10] * w10 + srcData[i01] * w01 + srcData[i11] * w11,
+          srcData[i00 + 1] * w00 + srcData[i10 + 1] * w10 + srcData[i01 + 1] * w01 + srcData[i11 + 1] * w11,
+          srcData[i00 + 2] * w00 + srcData[i10 + 2] * w10 + srcData[i01 + 2] * w01 + srcData[i11 + 2] * w11,
+        ];
+      };
+
+      const pano = document.createElement("canvas");
+      pano.width = W;
+      pano.height = H;
+      const pctx = pano.getContext("2d")!;
+      const out = pctx.createImageData(W, H);
+      const data = out.data;
+
+      for (let v = 0; v < H; v++) {
+        const lat = (0.5 - (v + 0.5) / H) * Math.PI;
+        const sinLat = Math.sin(lat);
+        const cosLat = Math.cos(lat);
+        for (let u = 0; u < W; u++) {
+          const lon = ((u + 0.5) / W) * Math.PI * 2;
+          const x = cosLat * Math.sin(lon);
+          const y = sinLat;
+
+          // Orthographic photo coords. The visible hemisphere maps directly;
+          // the unseen one falls on the same (x, y) via the z -> -z mirror,
+          // so every longitude keeps real terrain detail.
+          const rgb = sample(
+            CROP_CENTER.x + x * GLOBE_RADIUS_PX,
+            CROP_CENTER.y - y * GLOBE_RADIUS_PX,
+          );
+
+          const o = (v * W + u) * 4;
+          data[o] = rgb[0];
+          data[o + 1] = rgb[1];
+          data[o + 2] = rgb[2];
+          data[o + 3] = 255;
+        }
+      }
+      pctx.putImageData(out, 0, 0);
+
+      const texture = new THREE.CanvasTexture(pano);
       texture.colorSpace = THREE.SRGBColorSpace;
       texture.anisotropy = 8;
       texture.needsUpdate = true;
@@ -88,31 +132,44 @@ function createRockTexture() {
   return tex;
 }
 
-function Earth({ map }: { map: THREE.Texture }) {
-  const groupRef = useRef<THREE.Group>(null);
+const ATMOSPHERE_VERTEX = `
+  varying vec3 vNormal;
+  void main() {
+    vNormal = normalize(normalMatrix * normal);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+`;
 
-  // Keep the disc facing the camera even though the parent group rotates
-  useFrame(({ camera }) => {
-    const group = groupRef.current;
-    if (!group) return;
-    const invParent = new THREE.Quaternion();
-    group.parent?.getWorldQuaternion(invParent).invert();
-    group.quaternion.copy(camera.quaternion).premultiply(invParent);
+const ATMOSPHERE_FRAGMENT = `
+  varying vec3 vNormal;
+  void main() {
+    float intensity = pow(0.62 - dot(vNormal, vec3(0.0, 0.0, 1.0)), 3.0);
+    gl_FragColor = vec4(0.42, 0.7, 1.0, 1.0) * intensity;
+  }
+`;
+
+function Earth({ map }: { map: THREE.Texture }) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  useFrame((_, delta) => {
+    if (meshRef.current) meshRef.current.rotation.y += delta * 0.06;
   });
 
   return (
-    <group ref={groupRef}>
-      <mesh>
-        <circleGeometry args={[EARTH_RADIUS, 64]} />
-        <meshBasicMaterial map={map} transparent toneMapped={false} depthWrite={false} />
+    <group>
+      <mesh ref={meshRef}>
+        <sphereGeometry args={[EARTH_RADIUS, 96, 96]} />
+        <meshBasicMaterial map={map} toneMapped={false} />
       </mesh>
-      <mesh scale={1.03}>
-        <sphereGeometry args={[EARTH_RADIUS, 48, 48]} />
-        <meshBasicMaterial
-          color="#67b7ff"
+      {/* Fresnel atmosphere halo, additive so it reads as glow at the limb */}
+      <mesh scale={1.16}>
+        <sphereGeometry args={[EARTH_RADIUS, 64, 64]} />
+        <shaderMaterial
+          vertexShader={ATMOSPHERE_VERTEX}
+          fragmentShader={ATMOSPHERE_FRAGMENT}
           transparent
-          opacity={0.1}
           side={THREE.BackSide}
+          blending={THREE.AdditiveBlending}
           depthWrite={false}
         />
       </mesh>
@@ -321,7 +378,7 @@ function Scene({ earthMap }: { earthMap: THREE.Texture }) {
 }
 
 export default function EarthScene() {
-  const earthMap = useCroppedEarthTexture(earthNightUrl);
+  const earthMap = useEarthPanoTexture(earthNightUrl);
 
   return (
     <Canvas

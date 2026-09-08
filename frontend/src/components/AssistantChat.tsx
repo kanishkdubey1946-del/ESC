@@ -137,7 +137,7 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
     <div className="esc-chat-main">
       <div className={`esc-chat-scroll ${empty ? 'is-empty' : ''}`} ref={scrollRef} onScroll={() => { const scroll = scrollRef.current; if (scroll) { stickRef.current = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 100; setShowLatest(!stickRef.current); } }}>
         {empty ? <motion.div initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="esc-chat-welcome">
-          <div className="esc-orb-stage"><div className="esc-orb-halo" /><ThinkingOrb state={listening ? 'listening' : 'shaping'} size={64} theme="dark" /><span className="esc-orbit-dot" /></div>
+          <div className="esc-orb-stage" aria-hidden="true"><div className="esc-orb-halo" /><ThinkingOrb state="listening" size={64} theme="dark" /><span className="esc-orbit-dot" /></div>
           <div className="esc-welcome-kicker"><span /> YOUR PERSONAL LEARNING COMPANION</div>
           <h1>A little curiosity.<br /><span>A whole new possibility.</span></h1>
           <p>Hey {displayName.split(' ')[0]}, what’s on your mind?<br className="sm:hidden" /> Let’s make it make sense.</p>
@@ -147,7 +147,7 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
           {messages.map((message, index) => <div key={message.id} className="mb-8">
             {message.role === 'assistant' && !message.text && busy ? <AIStatus state={phase} label={phaseLabel} size={64} /> : <ChatBubble role={message.role} text={message.text} name={message.role === 'assistant' ? 'ESC' : undefined} streaming={busy && index === messages.length - 1} />}
             {!!message.sources?.length && !!message.text && <details className="esc-answer-sources"><summary><ShieldCheck size={12} /> Based on {message.sources.length} of your source{message.sources.length === 1 ? '' : 's'} <ChevronDown size={12} /></summary><div className="mt-3 grid gap-2">{message.sources.map(source => <div key={source.sourceId} className="rounded-lg border border-white/10 px-3 py-2"><p className="text-xs text-[#ccc2e1]">[{source.citationNumber}] {source.title}</p><p className="mt-1 text-[11px] leading-5 text-[#92909e]">{source.evidenceSnippets?.[0]}</p></div>)}</div></details>}
-            {message.interrupted && message.text && <p className="mt-2 text-xs text-[#ae91b0]">Response interrupted. You can retry below.</p>}
+            {message.interrupted && message.text && <div className="mt-2 flex items-center gap-3 text-xs text-[#ae91b0]"><p>Response interrupted.</p>{!busy && index === messages.length - 1 && !error && <button className="esc-secondary-button" onClick={() => void send(true)}><RefreshCw size={12} /> Retry response</button>}</div>}
           </div>)}
         </div>}
       </div>

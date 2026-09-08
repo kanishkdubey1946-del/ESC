@@ -3,6 +3,7 @@ import { ArrowRight, CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
 import { OrbLoader as Loader2 } from './ui/OrbLoader';
 import { localAuth } from '../lib/localAuth';
 import { useAuth } from '../auth/AuthProvider';
+import '../styles/auth.css';
 
 interface AuthModalProps { mode: 'signin' | 'signup'; onClose: () => void; onSuccess: () => void; }
 const passwordRules = (value: string) => value.length >= 8;
@@ -43,7 +44,7 @@ export default function AuthModal({ mode: initialMode, onClose, onSuccess }: Aut
     finally { setLoading(false); }
   };
 
-  return <div className="fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4 backdrop-blur-sm" onMouseDown={onClose}>
+  return <div data-theme="dark" className="esc-auth fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4 backdrop-blur-sm" onMouseDown={onClose}>
     <section role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-2xl" onMouseDown={event => event.stopPropagation()}>
       <div className="flex items-start justify-between">
         <div>
@@ -64,8 +65,8 @@ export default function AuthModal({ mode: initialMode, onClose, onSuccess }: Aut
           </label>
         )}
         <label className="block text-sm font-medium text-slate-700">
-          Work email
-          <input required type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" placeholder="you@organization.com" className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-50" />
+          Email
+          <input required type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-50" />
         </label>
         <label className="block text-sm font-medium text-slate-700">
           Password

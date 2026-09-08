@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { ArrowUpRight, Menu, X } from 'lucide-react';
 import { FinalCTA, HowItWorks, ModesSection, SpecialistMarquee } from '../components/landing/HomeSections';
 import HomeFooter from '../components/landing/HomeFooter';
 import AuthModal from '../components/AuthModal';
-import EarthScene from '../components/landing/EarthScene';
 import { useAuth } from '../auth/AuthProvider';
+import { GlowMenuBar } from '../components/ui/glow-menu';
+import { SonarGrid } from '../components/ui/sonar-grid';
 import '../styles/homepage.css';
 
 export default function LandingPage() {
@@ -35,10 +37,6 @@ export default function LandingPage() {
 
   return (
     <div className="esc-home" id="top">
-      <div className="hp-site-canvas" aria-hidden>
-        <EarthScene />
-      </div>
-
       {/* ── Nav ── */}
       <nav className={`hp-nav${scrolled ? ' scrolled' : ''}`} aria-label="Primary">
         <a className="hp-brand" href="#top" onClick={() => setMenuOpen(false)}>
@@ -46,12 +44,12 @@ export default function LandingPage() {
           <span>ESC</span>
         </a>
 
-        <div className="hp-navlinks">
-          <a href="#top">Home</a>
-          <a href="#specialists">Specialists</a>
-          <a href="#how">How it works</a>
-          <a href="#modes">Features</a>
-        </div>
+        <GlowMenuBar className="hp-navlinks" ariaLabel="Homepage sections" items={[
+          { key: 'home', label: 'Home', href: '#top' },
+          { key: 'specialists', label: 'Specialists', href: '#specialists' },
+          { key: 'how', label: 'How it works', href: '#how' },
+          { key: 'features', label: 'Features', href: '#modes' },
+        ]} />
 
         <div className="hp-actions">
           <a className="hp-btn ghost" href="#modes">Explore</a>
@@ -60,7 +58,7 @@ export default function LandingPage() {
             type="button" className="hp-btn ghost hp-menu-toggle"
             aria-label="Toggle menu" aria-expanded={menuOpen}
             onClick={() => setMenuOpen(v => !v)}
-          >☰</button>
+          >{menuOpen ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}</button>
         </div>
       </nav>
 
@@ -78,6 +76,21 @@ export default function LandingPage() {
 
       <main>
         <section className="hp-hero-full">
+          <SonarGrid
+            aria-hidden="true"
+            className="hp-sonar-grid"
+            spacing={30}
+            dotRadius={1.25}
+            baseOpacity={0.16}
+            color="#e5e5e8"
+            pingEvery={3.2}
+            speed={230}
+            ringWidth={100}
+            amplitude={2}
+            maxRings={4}
+            pingArea={[0.1, 0.12, 0.9, 0.82]}
+          />
+          <div className="hp-sonar-mask" aria-hidden="true" />
           <motion.div
             className="hp-hero-overlay"
             initial={{ opacity: 0, x: -24 }}
@@ -89,14 +102,13 @@ export default function LandingPage() {
               <span className="sp-grad">Smarter.</span>
             </h1>
             <p>
-              ESC coordinates 12 specialized AI agents to analyze your notes,
-              explain complex concepts, generate quizzes, and structure your
-              revision — all inside one intelligent workspace.
+              A focused place for your notes, questions, practice, and study plan.
+              Work with your own material and keep the next step clear.
             </p>
 
             <div className="hp-hero-actions">
               <button type="button" className="hp-btn primary big" onClick={launch}>
-                Launch ESC →
+                Open your workspace <ArrowUpRight size={17} aria-hidden="true" />
               </button>
               <a className="hp-btn ghost big" href="#how">
                 See how it works
@@ -105,18 +117,18 @@ export default function LandingPage() {
 
             <div className="hp-hero-meta">
               <div className="hp-hero-stat">
-                <strong>12</strong>
-                <span>AI Specialists</span>
+                <strong>Sources</strong>
+                <span>Your material</span>
               </div>
               <div className="hp-hero-divider" />
               <div className="hp-hero-stat">
-                <strong>∞</strong>
-                <span>Topics</span>
+                <strong>Practice</strong>
+                <span>Active recall</span>
               </div>
               <div className="hp-hero-divider" />
               <div className="hp-hero-stat">
-                <strong>1</strong>
-                <span>Workspace</span>
+                <strong>Planning</strong>
+                <span>Steady progress</span>
               </div>
             </div>
           </motion.div>
