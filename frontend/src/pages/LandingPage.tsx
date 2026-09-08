@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Menu, X } from 'lucide-react';
+import { ArrowUpRight, Check, FileText, Menu, X } from 'lucide-react';
 import { FinalCTA, HowItWorks, ModesSection, SpecialistMarquee } from '../components/landing/HomeSections';
 import HomeFooter from '../components/landing/HomeFooter';
 import AuthModal from '../components/AuthModal';
@@ -9,6 +9,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { GlowMenuBar } from '../components/ui/glow-menu';
 import { SonarGrid } from '../components/ui/sonar-grid';
 import BrandMark from '../components/ui/BrandMark';
+import { ThinkingOrb } from '../components/ui/thinking-orbs';
 import '../styles/homepage.css';
 
 export default function LandingPage() {
@@ -38,6 +39,23 @@ export default function LandingPage() {
 
   return (
     <div className="esc-home" id="top">
+      <SonarGrid
+        aria-hidden="true"
+        className="hp-page-sonar"
+        spacing={30}
+        dotRadius={1.15}
+        baseOpacity={0.12}
+        color="#dedee5"
+        pingEvery={4.2}
+        speed={190}
+        ringWidth={112}
+        amplitude={1.8}
+        interactive={false}
+        maxRings={3}
+        pingArea={[0.08, 0.08, 0.94, 0.92]}
+      />
+      <div className="hp-page-atmosphere" aria-hidden="true" />
+
       {/* ── Nav ── */}
       <nav className={`hp-nav${scrolled ? ' scrolled' : ''}`} aria-label="Primary">
         <a className="hp-brand" href="#top" onClick={() => setMenuOpen(false)}>
@@ -77,62 +95,112 @@ export default function LandingPage() {
 
       <main>
         <section className="hp-hero-full">
-          <SonarGrid
-            aria-hidden="true"
-            className="hp-sonar-grid"
-            spacing={30}
-            dotRadius={1.25}
-            baseOpacity={0.16}
-            color="#e5e5e8"
-            pingEvery={3.2}
-            speed={230}
-            ringWidth={100}
-            amplitude={2}
-            maxRings={4}
-            pingArea={[0.1, 0.12, 0.9, 0.82]}
-          />
           <div className="hp-sonar-mask" aria-hidden="true" />
-          <motion.div
-            className="hp-hero-overlay"
-            initial={{ opacity: 0, x: -24 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
-          >
-            <h1>
-              Study<br />
-              <span className="sp-grad">Smarter.</span>
-            </h1>
-            <p>
-              A focused place for your notes, questions, practice, and study plan.
-              Work with your own material and keep the next step clear.
-            </p>
+          <div className="hp-hero-overlay">
+            <motion.div
+              className="hp-hero-layout"
+              initial={{ opacity: 0, y: 18 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+            >
+              <div className="hp-hero-copy">
+                <span className="hp-hero-eyebrow">
+                  <span aria-hidden="true" />
+                  Your material. One clear workspace.
+                </span>
+                <h1>
+                  Study<br />
+                  <span className="sp-grad">Smarter.</span>
+                </h1>
+                <p>
+                  Ask questions, practise what matters, and build a study plan around
+                  the sources you already trust.
+                </p>
 
-            <div className="hp-hero-actions">
-              <button type="button" className="hp-btn primary big" onClick={launch}>
-                Open your workspace <ArrowUpRight size={17} aria-hidden="true" />
-              </button>
-              <a className="hp-btn ghost big" href="#how">
-                See how it works
-              </a>
-            </div>
+                <div className="hp-hero-actions">
+                  <button type="button" className="hp-btn primary big" onClick={launch}>
+                    Open your workspace <ArrowUpRight size={17} aria-hidden="true" />
+                  </button>
+                  <a className="hp-btn ghost big" href="#how">
+                    See how it works
+                  </a>
+                </div>
 
-            <div className="hp-hero-meta">
-              <div className="hp-hero-stat">
-                <strong>Sources</strong>
-                <span>Your material</span>
+                <div className="hp-hero-meta" aria-label="Workspace highlights">
+                  <div className="hp-hero-stat">
+                    <strong>Grounded answers</strong>
+                    <span>From your sources</span>
+                  </div>
+                  <div className="hp-hero-divider" />
+                  <div className="hp-hero-stat">
+                    <strong>Active practice</strong>
+                    <span>Built for recall</span>
+                  </div>
+                  <div className="hp-hero-divider" />
+                  <div className="hp-hero-stat">
+                    <strong>Adaptive plans</strong>
+                    <span>Made around you</span>
+                  </div>
+                </div>
               </div>
-              <div className="hp-hero-divider" />
-              <div className="hp-hero-stat">
-                <strong>Practice</strong>
-                <span>Active recall</span>
-              </div>
-              <div className="hp-hero-divider" />
-              <div className="hp-hero-stat">
-                <strong>Planning</strong>
-                <span>Steady progress</span>
-              </div>
-            </div>
-          </motion.div>
+
+              <motion.aside
+                className="hp-study-preview"
+                aria-label="Example source-grounded study session"
+                initial={{ opacity: 0, y: 22, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                transition={{ duration: 0.72, delay: 0.14, ease: 'easeOut' }}
+              >
+                <header className="hp-preview-header">
+                  <div>
+                    <span>Study session</span>
+                    <strong>Cell biology</strong>
+                  </div>
+                  <div className="hp-preview-status">
+                    <ThinkingOrb state="searching" size={20} theme="dark" />
+                    <span>Using your source</span>
+                  </div>
+                </header>
+
+                <div className="hp-preview-source">
+                  <span className="hp-preview-file"><FileText size={15} aria-hidden="true" /></span>
+                  <div>
+                    <strong>Cell Structure — Chapter 4</strong>
+                    <span>PDF · 12 pages</span>
+                  </div>
+                  <span className="hp-preview-ready"><Check size={12} aria-hidden="true" /> Ready</span>
+                </div>
+
+                <div className="hp-preview-thread">
+                  <div className="hp-preview-question">
+                    <span>You asked</span>
+                    <p>Why do cells need mitochondria?</p>
+                  </div>
+                  <div className="hp-preview-answer">
+                    <span className="hp-preview-orb" aria-hidden="true">
+                      <ThinkingOrb state="composing" size={20} theme="dark" />
+                    </span>
+                    <div>
+                      <span>ESC</span>
+                      <p>
+                        Mitochondria convert energy from nutrients into ATP, the usable
+                        energy that powers most cellular activity.
+                      </p>
+                      <div className="hp-preview-citations">
+                        <span>Page 6</span>
+                        <span>Page 8</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <footer className="hp-preview-footer">
+                  <span><Check size={13} aria-hidden="true" /> Grounded in your material</span>
+                  <span>Ask a follow-up</span>
+                </footer>
+              </motion.aside>
+            </motion.div>
+          </div>
         </section>
 
         <SpecialistMarquee />
