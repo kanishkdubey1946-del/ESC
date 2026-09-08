@@ -1,5 +1,9 @@
-const apiBaseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
+const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
 const tokenKey = 'esc-local-session';
+const backendReadyTtlMs = 60_000;
+
+let backendReadyUntil = 0;
+let backendWakeRequest: Promise<void> | null = null;
 
 export interface LocalUser { id: string; name: string; email: string; }
 interface AuthResponse { token: string; user: LocalUser; }
@@ -12,12 +16,57 @@ export function authenticatedHeaders(headers?: HeadersInit): Headers {
   return next;
 }
 
+const delay = (milliseconds: number) => new Promise<void>((resolve) => {
+  window.setTimeout(resolve, milliseconds);
+});
+
+/**
+ * Render free services may be asleep when the first auth request arrives.
+ * Warm the API separately so a transient cold start cannot lose or duplicate a
+ * registration POST. Concurrent callers share the same wake-up request.
+ */
+async function ensureBackendIsReady(): Promise<void> {
+  if (Date.now() < backendReadyUntil) return;
+  if (backendWakeRequest) return backendWakeRequest;
+
+  backendWakeRequest = (async () => {
+    let lastError: unknown;
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const response = await fetch(`${apiBaseUrl}/health`, {
+          headers: { Accept: 'application/json' },
+          cache: 'no-store',
+        });
+
+        if (response.ok) {
+          backendReadyUntil = Date.now() + backendReadyTtlMs;
+          return;
+        }
+
+        lastError = new Error(`Backend health check returned ${response.status}.`);
+      } catch (error) {
+        lastError = error;
+      }
+
+      if (attempt < 2) await delay(1_000 * (attempt + 1));
+    }
+
+    throw lastError instanceof Error ? lastError : new Error('Backend health check failed.');
+  })().finally(() => {
+    backendWakeRequest = null;
+  });
+
+  return backendWakeRequest;
+}
+
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
+    await ensureBackendIsReady();
     response = await fetch(`${apiBaseUrl}${path}`, { headers: { 'Content-Type': 'application/json', ...options.headers }, ...options });
   } catch {
-    throw new Error(`Cannot reach the backend at ${apiBaseUrl}. Check that the backend is running at the configured address.`);
+    throw new Error('The secure ESC service is waking up or temporarily unavailable. Check your connection and try again in a moment.');
   }
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as { detail?: string } | null;

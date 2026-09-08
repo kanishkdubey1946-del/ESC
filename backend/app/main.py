@@ -116,9 +116,17 @@ def current_user(authorization: str | None = Header(default=None)) -> UserRespon
 
 
 app = FastAPI(title="ESC — Enhanced Study Companion API", version="2.0.0")
-cors_origins = [origin.strip() for origin in os.getenv(
-    "CORS_ALLOW_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
-).split(",") if origin.strip()]
+default_cors_origins = {
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "https://esc-study-companion-web.onrender.com",
+}
+configured_cors_origins = {
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOW_ORIGINS", "").split(",")
+    if origin.strip()
+}
+cors_origins = sorted(default_cors_origins | configured_cors_origins)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=cors_origins,
