@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Globe2, Menu, Network, X } from 'lucide-react';
+import { ArrowUpRight, Brain, FileText, Gauge, Menu, Search, X } from 'lucide-react';
 import { FinalCTA, HowItWorks, ModesSection, SpecialistMarquee } from '../components/landing/HomeSections';
 import HomeFooter from '../components/landing/HomeFooter';
 import AuthModal from '../components/AuthModal';
@@ -11,6 +11,13 @@ import { SonarGrid } from '../components/ui/sonar-grid';
 import BrandMark from '../components/ui/BrandMark';
 import { ThinkingOrb } from '../components/ui/thinking-orbs';
 import '../styles/homepage.css';
+
+const HERO_AGENT_STAGES = [
+  { icon: Search, name: 'Research Agent', detail: 'Search and cross-check current sources', provider: 'Perplexity API' },
+  { icon: Brain, name: 'Analysis Agent', detail: 'Extract claims, context, and conflicts', provider: 'Reasoning model' },
+  { icon: Gauge, name: 'Decision Agent', detail: 'Rank evidence and flag uncertainty', provider: 'Evidence rubric' },
+  { icon: FileText, name: 'Output Agent', detail: 'Format a clear answer with citations', provider: 'Typed schema' },
+];
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -106,15 +113,15 @@ export default function LandingPage() {
               <div className="hp-hero-copy">
                 <span className="hp-hero-eyebrow">
                   <span aria-hidden="true" />
-                  Web research. Specialist agents. One workspace.
+                  Web research today · four-stage pipeline next
                 </span>
                 <h1>
                   Study<br />
                   <span className="sp-grad">Smarter.</span>
                 </h1>
                 <p>
-                  Search the web, bring your own sources, and let specialist agents turn
-                  the results into explanations, practice, and a plan you can act on.
+                  Search the web or add your own material today. The next ESC architecture
+                  gives research, analysis, evidence scoring, and answer formatting to separate agents.
                 </p>
 
                 <div className="hp-hero-actions">
@@ -128,75 +135,62 @@ export default function LandingPage() {
 
                 <div className="hp-hero-meta" aria-label="Workspace highlights">
                   <div className="hp-hero-stat">
-                    <strong>Live research</strong>
-                    <span>Current web sources</span>
+                    <strong>Current workspace</strong>
+                    <span>Web + your sources</span>
                   </div>
                   <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
-                    <strong>Specialist agents</strong>
-                    <span>Matched to each task</span>
+                    <strong>Next architecture</strong>
+                    <span>Four focused stages</span>
                   </div>
                   <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
-                    <strong>Your material</strong>
-                    <span>Used when you add it</span>
+                    <strong>Structured evidence</strong>
+                    <span>Passed between agents</span>
                   </div>
                 </div>
               </div>
 
               <motion.aside
                 className="hp-study-preview"
-                aria-label="Example multi-agent web research session"
+                aria-label="Preview of the upcoming modular multi-agent pipeline"
                 initial={{ opacity: 0, y: 22, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 transition={{ duration: 0.72, delay: 0.14, ease: 'easeOut' }}
               >
                 <header className="hp-preview-header">
                   <div>
-                    <span>Research session</span>
-                    <strong>Parkinson&apos;s disease</strong>
+                    <span>Architecture preview</span>
+                    <strong>Four focused agents, one answer</strong>
                   </div>
                   <div className="hp-preview-status">
-                    <ThinkingOrb state="searching" size={20} theme="dark" />
-                    <span>Searching the web</span>
+                    <ThinkingOrb state="shaping" size={20} theme="dark" />
+                    <span>Planned</span>
                   </div>
                 </header>
 
-                <div className="hp-preview-source">
-                  <span className="hp-preview-file"><Globe2 size={15} aria-hidden="true" /></span>
-                  <div>
-                    <strong>Live web research</strong>
-                    <span>4 sources found · uploaded files optional</span>
-                  </div>
-                  <span className="hp-preview-ready"><span aria-hidden="true" /> Live</span>
+                <div className="hp-pipeline-brief">
+                  <span>Example request</span>
+                  <p>Compare study methods using current evidence.</p>
                 </div>
 
-                <div className="hp-preview-thread">
-                  <div className="hp-preview-question">
-                    <span>You asked</span>
-                    <p>How is Parkinson&apos;s disease diagnosed?</p>
-                  </div>
-                  <div className="hp-preview-answer">
-                    <span className="hp-preview-orb" aria-hidden="true">
-                      <ThinkingOrb state="composing" size={20} theme="dark" />
-                    </span>
-                    <div>
-                      <span>ESC</span>
-                      <p>
-                        Research Scout is comparing current web sources while Concept
-                        Clarifier prepares a concise, cited explanation.
-                      </p>
-                      <div className="hp-preview-citations">
-                        <span>Web research</span>
-                        <span>Research trail</span>
+                <ol className="hp-agent-pipeline">
+                  {HERO_AGENT_STAGES.map((stage, index) => (
+                    <li key={stage.name}>
+                      <span className="hp-agent-index">{String(index + 1).padStart(2, '0')}</span>
+                      <span className="hp-agent-icon" aria-hidden="true"><stage.icon size={15} /></span>
+                      <div>
+                        <strong>{stage.name}</strong>
+                        <span>{stage.detail}</span>
                       </div>
-                    </div>
-                  </div>
-                </div>
+                      <span className="hp-agent-provider">{stage.provider}</span>
+                    </li>
+                  ))}
+                </ol>
 
                 <footer className="hp-preview-footer">
-                  <span><Network size={13} aria-hidden="true" /> Specialists collaborating</span>
-                  <span>Web + uploaded sources</span>
+                  <span>Structured JSON between stages</span>
+                  <span>API keys stay server-side</span>
                 </footer>
               </motion.aside>
             </motion.div>
