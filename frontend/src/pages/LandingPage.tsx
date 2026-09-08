@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowUpRight, Brain, FileText, Gauge, Menu, Search, X } from 'lucide-react';
+import { ArrowUpRight, Menu, X } from 'lucide-react';
 import { FinalCTA, HowItWorks, ModesSection, SpecialistMarquee } from '../components/landing/HomeSections';
 import HomeFooter from '../components/landing/HomeFooter';
 import AuthModal from '../components/AuthModal';
@@ -9,15 +9,7 @@ import { useAuth } from '../auth/AuthProvider';
 import { GlowMenuBar } from '../components/ui/glow-menu';
 import { SonarGrid } from '../components/ui/sonar-grid';
 import BrandMark from '../components/ui/BrandMark';
-import { ThinkingOrb } from '../components/ui/thinking-orbs';
 import '../styles/homepage.css';
-
-const HERO_AGENT_STAGES = [
-  { icon: Search, name: 'Research Agent', detail: 'Search and cross-check current sources', provider: 'Perplexity API' },
-  { icon: Brain, name: 'Analysis Agent', detail: 'Extract claims, context, and conflicts', provider: 'Reasoning model' },
-  { icon: Gauge, name: 'Decision Agent', detail: 'Rank evidence and flag uncertainty', provider: 'Evidence rubric' },
-  { icon: FileText, name: 'Output Agent', detail: 'Format a clear answer with citations', provider: 'Typed schema' },
-];
 
 export default function LandingPage() {
   const navigate = useNavigate();
@@ -111,17 +103,13 @@ export default function LandingPage() {
               transition={{ duration: 0.7, ease: 'easeOut' }}
             >
               <div className="hp-hero-copy">
-                <span className="hp-hero-eyebrow">
-                  <span aria-hidden="true" />
-                  Web research today · four-stage pipeline next
-                </span>
                 <h1>
                   Study<br />
                   <span className="sp-grad">Smarter.</span>
                 </h1>
                 <p>
-                  Search the web or add your own material today. The next ESC architecture
-                  gives research, analysis, evidence scoring, and answer formatting to separate agents.
+                  Search the web, bring your own sources, and let specialist agents turn
+                  the results into explanations, practice, and a plan you can act on.
                 </p>
 
                 <div className="hp-hero-actions">
@@ -135,64 +123,21 @@ export default function LandingPage() {
 
                 <div className="hp-hero-meta" aria-label="Workspace highlights">
                   <div className="hp-hero-stat">
-                    <strong>Current workspace</strong>
-                    <span>Web + your sources</span>
+                    <strong>Live research</strong>
+                    <span>Current web sources</span>
                   </div>
                   <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
-                    <strong>Next architecture</strong>
-                    <span>Four focused stages</span>
+                    <strong>Specialist agents</strong>
+                    <span>Matched to each task</span>
                   </div>
                   <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
-                    <strong>Structured evidence</strong>
-                    <span>Passed between agents</span>
+                    <strong>Your material</strong>
+                    <span>Used when you add it</span>
                   </div>
                 </div>
               </div>
-
-              <motion.aside
-                className="hp-study-preview"
-                aria-label="Preview of the upcoming modular multi-agent pipeline"
-                initial={{ opacity: 0, y: 22, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                transition={{ duration: 0.72, delay: 0.14, ease: 'easeOut' }}
-              >
-                <header className="hp-preview-header">
-                  <div>
-                    <span>Architecture preview</span>
-                    <strong>Four focused agents, one answer</strong>
-                  </div>
-                  <div className="hp-preview-status">
-                    <ThinkingOrb state="shaping" size={20} theme="dark" />
-                    <span>Planned</span>
-                  </div>
-                </header>
-
-                <div className="hp-pipeline-brief">
-                  <span>Example request</span>
-                  <p>Compare study methods using current evidence.</p>
-                </div>
-
-                <ol className="hp-agent-pipeline">
-                  {HERO_AGENT_STAGES.map((stage, index) => (
-                    <li key={stage.name}>
-                      <span className="hp-agent-index">{String(index + 1).padStart(2, '0')}</span>
-                      <span className="hp-agent-icon" aria-hidden="true"><stage.icon size={15} /></span>
-                      <div>
-                        <strong>{stage.name}</strong>
-                        <span>{stage.detail}</span>
-                      </div>
-                      <span className="hp-agent-provider">{stage.provider}</span>
-                    </li>
-                  ))}
-                </ol>
-
-                <footer className="hp-preview-footer">
-                  <span>Structured JSON between stages</span>
-                  <span>API keys stay server-side</span>
-                </footer>
-              </motion.aside>
             </motion.div>
           </div>
         </section>
