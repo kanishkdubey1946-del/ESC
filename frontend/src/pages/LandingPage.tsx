@@ -105,8 +105,8 @@ export default function LandingPage() {
             >
               <div className="hp-hero-copy">
                 <h1>
-                  Study<br />
-                  <span className="sp-grad">Smarter.</span>
+                  <span className="hp-hero-line">Study</span>
+                  <span className="hp-hero-line sp-grad">Smarter.</span>
                 </h1>
                 <p>
                   Search the web, bring your own sources, and let specialist agents turn
@@ -127,12 +127,10 @@ export default function LandingPage() {
                     <strong>Live research</strong>
                     <span>Current web sources</span>
                   </div>
-                  <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
                     <strong>Specialist agents</strong>
                     <span>Matched to each task</span>
                   </div>
-                  <div className="hp-hero-divider" />
                   <div className="hp-hero-stat">
                     <strong>Your material</strong>
                     <span>Used when you add it</span>
