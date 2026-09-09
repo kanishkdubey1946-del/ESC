@@ -45,6 +45,7 @@
 .esc-workspace button { transition: background .18s, border-color .18s, color .18s, transform .18s; }
 .esc-workspace button:disabled { cursor: not-allowed; opacity: .45; }
 .esc-workspace :focus-visible { outline: 2px solid var(--esc-accent); outline-offset: 4px; }
+.esc-workspace .esc-ai-input-textarea:focus-visible { outline: none; }
 .esc-workspace input[type=checkbox], .esc-workspace input[type=radio] { accent-color: var(--esc-accent); }
 .esc-workspace ::selection { background: var(--esc-accent); color: #181322; }
 .esc-skip-link { position: fixed; top: -80px; left: 280px; z-index: 200; border-radius: 8px; padding: 12px; background: #c9b1f8; color: #17131e; }
