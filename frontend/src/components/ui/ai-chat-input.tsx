@@ -48,7 +48,7 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       placeholder = "Ask anything…",
       className,
       identity,
-      identityLabel = "ESC",
+      identityLabel,
       status,
       toolbar,
       voiceIndicator,
@@ -105,14 +105,16 @@ export const PromptInput = React.forwardRef<HTMLDivElement, PromptInputProps>(
       || (!busy && !listening && !hasPrompt && !onVoice)
 
     return (
-      <div ref={forwardedRef} className={cn("relative w-full pt-7", className)}>
-        <div
-          aria-hidden="true"
-          className="esc-ai-input-cap absolute left-5 top-0 z-0 inline-flex h-9 min-w-20 items-center gap-2 rounded-t-[18px] border border-b-0 border-white/[0.09] bg-[#1a1a20]/95 px-3 text-[10px] font-medium tracking-[0.08em] text-white/45 shadow-[0_-10px_35px_rgba(0,0,0,0.2)] backdrop-blur-xl"
-        >
-          {identity}
-          <span>{identityLabel}</span>
-        </div>
+      <div ref={forwardedRef} className={cn("relative w-full", className)}>
+        {(identity || identityLabel) && (
+          <div
+            aria-hidden="true"
+            className="esc-ai-input-cap absolute left-5 top-0 z-0 inline-flex h-9 min-w-20 items-center gap-2 rounded-t-[18px] border border-b-0 border-white/[0.09] bg-[#1a1a20]/95 px-3 text-[10px] font-medium tracking-[0.08em] text-white/45 shadow-[0_-10px_35px_rgba(0,0,0,0.2)] backdrop-blur-xl"
+          >
+            {identity}
+            {identityLabel && <span>{identityLabel}</span>}
+          </div>
+        )}
 
         <div
           aria-busy={busy}

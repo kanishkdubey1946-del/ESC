@@ -5,7 +5,6 @@ import { AIStatus } from './ui/AIStatus';
 import { ThinkingOrb, type OrbState } from './ui/thinking-orbs';
 import { ChatBubble } from './ui/ChatBubble';
 import { PromptInput } from './ui/ai-chat-input';
-import BrandMark from './ui/BrandMark';
 import { streamAssistantChat } from '../utils/assistantChat';
 import { readConversations, saveConversation, type AssistantMessage } from '../lib/assistantMemory';
 import { consumeSpecialistLaunch, type WorkspaceMode } from '../lib/modeAgents';
@@ -167,7 +166,6 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
           listening={listening}
           textareaRef={textareaRef}
           placeholder={selectedDocs.length ? 'Ask anything about your sources…' : 'Ask a question, untangle a concept, or dream up a plan…'}
-          identity={<BrandMark className="size-4 object-contain" />}
           status={listening ? <AIStatus state="listening" label="Listening to you…" size={20} compact /> : undefined}
           voiceIndicator={<ThinkingOrb state="listening" size={20} theme="auto" />}
           toolbar={<>
