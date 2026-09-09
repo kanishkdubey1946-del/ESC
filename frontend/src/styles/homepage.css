@@ -335,8 +335,10 @@ html:has(.esc-home) {
 }
 .esc-home .hp-hero-copy h1 .hp-hero-answer {
   margin-top: 0.18em;
+  margin-bottom: -0.08em;
+  padding-bottom: 0.08em;
   font-size: clamp(2.85rem, 4.8vw, 4.15rem);
-  line-height: 1.04;
+  line-height: 1.12;
   letter-spacing: -0.05em;
   white-space: nowrap;
 }
