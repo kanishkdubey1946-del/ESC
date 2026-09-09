@@ -71,7 +71,6 @@ export default function LandingPage() {
         ]} />
 
         <div className="hp-actions">
-          <a className="hp-btn ghost" href="#modes">Explore</a>
           <button type="button" className="hp-btn dark" onClick={launch}>Get Started</button>
           <button
             type="button" className="hp-btn ghost hp-menu-toggle"
@@ -105,8 +104,8 @@ export default function LandingPage() {
             >
               <div className="hp-hero-copy">
                 <h1>
-                  <span className="hp-hero-line">Study</span>
-                  <span className="hp-hero-line sp-grad">Smarter.</span>
+                  <span className="hp-hero-line">One question.</span>
+                  <span className="hp-hero-line hp-hero-answer sp-grad">The right specialists.</span>
                 </h1>
                 <p>
                   Search the web, bring your own sources, and let specialist agents turn
