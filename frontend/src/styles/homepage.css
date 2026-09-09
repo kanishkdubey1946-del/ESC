@@ -5,6 +5,11 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
+/* Smooth in-page navigation while the landing page is mounted. */
+html:has(.esc-home) {
+  scroll-behavior: smooth;
+}
+
 /* ── Tokens ── */
 .esc-home {
   --sp-bg:        #080810;
@@ -32,6 +37,10 @@
 
 .esc-home * { box-sizing: border-box; }
 .esc-home a { color: inherit; text-decoration: none; }
+.esc-home#top,
+.esc-home .hp-section {
+  scroll-margin-top: 6.5rem;
+}
 
 /* One continuous animated field sits behind the complete landing page. */
 .esc-home .hp-page-sonar {
@@ -980,6 +989,7 @@
   .esc-home .sp-feature-card:nth-child(2n) { border-right: 1px solid rgba(255, 255, 255, 0.09); }
 }
 @media (prefers-reduced-motion: reduce) {
+  html:has(.esc-home) { scroll-behavior: auto; }
   .esc-home .glow-menu-link, .esc-home .glow-menu-link::before,
   .esc-home .sp-feature-card, .esc-home .sp-specialist-list li { transition: none; transform: none; }
 }
