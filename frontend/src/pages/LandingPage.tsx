@@ -49,7 +49,8 @@ export default function LandingPage() {
         speed={190}
         ringWidth={112}
         amplitude={1.8}
-        interactive={false}
+        interactive
+        interactionScope="viewport"
         maxRings={3}
         pingArea={[0.08, 0.08, 0.94, 0.92]}
       />

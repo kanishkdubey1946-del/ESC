@@ -39,7 +39,8 @@
   inset: 0;
   z-index: 0;
   width: 100%;
-  height: 100svh;
+  height: 100vh;
+  height: 100dvh;
   background: #070709;
   pointer-events: none;
 }

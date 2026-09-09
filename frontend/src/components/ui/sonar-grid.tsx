@@ -22,6 +22,8 @@ export interface SonarGridProps extends React.ComponentProps<"div"> {
   amplitude?: number
   /** Emit a ping where the user taps or clicks. */
   interactive?: boolean
+  /** Listen on the grid itself or across the viewport for background use. */
+  interactionScope?: "host" | "viewport"
   /** Maximum simultaneous rings. */
   maxRings?: number
   /** Start with one ring already mid-expansion. */
@@ -38,6 +40,7 @@ interface Ring {
 
 const MAX_DPR = 2
 const TAU = Math.PI * 2
+const INTERACTIVE_TARGETS = "a, button, input, select, textarea, label, summary, [role='button'], [role='link'], [contenteditable]"
 
 /**
  * Decorative, theme-aware dot field with expanding sonar rings.
@@ -53,6 +56,7 @@ export function SonarGrid({
   ringWidth = 90,
   amplitude = 2.2,
   interactive = true,
+  interactionScope = "host",
   maxRings = 6,
   seedPing = true,
   pingArea = [0.15, 0.2, 0.85, 0.8],
@@ -217,7 +221,21 @@ export function SonarGrid({
 
     const onDown = (event: PointerEvent) => {
       if (!opts.current.interactive || reduceMotion.matches) return
+      if (event.pointerType === "mouse" && event.button !== 0) return
+
       const rect = host.getBoundingClientRect()
+      const insideHost = event.clientX >= rect.left
+        && event.clientX <= rect.right
+        && event.clientY >= rect.top
+        && event.clientY <= rect.bottom
+      if (!insideHost) return
+
+      if (
+        interactionScope === "viewport"
+        && event.target instanceof Element
+        && event.target.closest(INTERACTIVE_TARGETS)
+      ) return
+
       addRing(event.clientX - rect.left, event.clientY - rect.top, performance.now())
       wake()
     }
@@ -240,7 +258,11 @@ export function SonarGrid({
     resizeObserver.observe(host)
     intersectionObserver.observe(host)
     mutationObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "style", "data-theme"] })
-    host.addEventListener("pointerdown", onDown)
+    if (interactionScope === "viewport") {
+      window.addEventListener("pointerdown", onDown, { capture: true, passive: true })
+    } else {
+      host.addEventListener("pointerdown", onDown, { passive: true })
+    }
     document.addEventListener("visibilitychange", onVisibility)
     reduceMotion.addEventListener("change", wake)
     wake()
@@ -249,14 +271,18 @@ export function SonarGrid({
       resizeObserver.disconnect()
       intersectionObserver.disconnect()
       mutationObserver.disconnect()
-      host.removeEventListener("pointerdown", onDown)
+      if (interactionScope === "viewport") {
+        window.removeEventListener("pointerdown", onDown, { capture: true })
+      } else {
+        host.removeEventListener("pointerdown", onDown)
+      }
       document.removeEventListener("visibilitychange", onVisibility)
       reduceMotion.removeEventListener("change", wake)
       cancelAnimationFrame(raf)
       window.clearTimeout(timer)
       refreshRef.current = () => {}
     }
-  }, [])
+  }, [interactionScope])
 
   React.useEffect(() => {
     refreshRef.current()
