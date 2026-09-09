@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
-import { ArrowDown, ArrowUp, ArrowUpRight, BookOpen, Check, ChevronDown, FileText, Mic, Paperclip, Plus, RefreshCw, ShieldCheck, Sparkles, Square, X } from 'lucide-react';
+import { ArrowDown, ArrowUpRight, BookOpen, Check, ChevronDown, FileText, Paperclip, Plus, RefreshCw, ShieldCheck, Sparkles, X } from 'lucide-react';
 import { AIStatus } from './ui/AIStatus';
 import { ThinkingOrb, type OrbState } from './ui/thinking-orbs';
 import { ChatBubble } from './ui/ChatBubble';
+import { PromptInput } from './ui/ai-chat-input';
+import BrandMark from './ui/BrandMark';
 import { streamAssistantChat } from '../utils/assistantChat';
 import { readConversations, saveConversation, type AssistantMessage } from '../lib/assistantMemory';
 import { consumeSpecialistLaunch, type WorkspaceMode } from '../lib/modeAgents';
@@ -55,11 +57,6 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
     window.addEventListener('storage', update);
     return () => { window.removeEventListener('storage', update); streamRef.current?.abort(); voiceRef.current?.abort(); };
   }, []);
-
-  useEffect(() => {
-    const input = textareaRef.current;
-    if (input) { input.style.height = 'auto'; input.style.height = `${Math.min(input.scrollHeight, 180)}px`; }
-  }, [prompt]);
 
   useEffect(() => {
     latestRef.current = messages;
@@ -114,7 +111,13 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
   };
 
   const toggleVoice = () => {
-    if (voiceRef.current) { voiceRef.current.stop(); return; }
+    if (voiceRef.current) {
+      const recognition = voiceRef.current;
+      voiceRef.current = null;
+      setListening(false);
+      recognition.stop();
+      return;
+    }
     const speechWindow = window as typeof window & { SpeechRecognition?: new () => VoiceRecognition; webkitSpeechRecognition?: new () => VoiceRecognition };
     const Recognition = speechWindow.SpeechRecognition || speechWindow.webkitSpeechRecognition;
     if (!Recognition) { setError('Voice input is not supported by this browser. You can type your question below.'); return; }
@@ -154,20 +157,27 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
       <div className="esc-composer-region">
         {showLatest && <button className="esc-scroll-latest" aria-label="Jump to latest message" onClick={() => { stickRef.current = true; scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: reducedMotion ? 'instant' : 'smooth' }); setShowLatest(false); }}><ArrowDown size={17} /></button>}
         {error && <div className="esc-chat-error" role="alert"><span>{error}</span><div className="flex shrink-0 gap-3">{messages.some(message => message.role === 'user') && <button disabled={busy} onClick={() => void send(true)} className="inline-flex items-center gap-1"><RefreshCw size={12} /> Retry</button>}<button onClick={() => setError('')} aria-label="Dismiss error"><X size={14} /></button></div></div>}
-        <div className="esc-composer">
-          {(busy || listening) && <div className="px-4 pt-3"><AIStatus state={listening ? 'listening' : phase} label={listening ? 'Listening to you…' : phaseLabel} size={20} compact /></div>}
-          <textarea aria-label="Message ESC" ref={textareaRef} rows={2} value={prompt} onChange={event => setPrompt(event.target.value)} placeholder={selectedDocs.length ? 'Ask anything about your sources…' : 'Ask a question, untangle a concept, or dream up a plan…'} onKeyDown={event => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent.isComposing) { event.preventDefault(); void send(); } }} />
-          <div className="esc-composer-toolbar">
-            <div className="flex items-center gap-2">
-              <button className="esc-icon-button" onClick={onOpenSources} aria-label="Attach sources"><Plus size={19} /></button>
-              <div className="relative">
-                <button className={`esc-source-button ${selectedDocs.length ? 'has-sources' : ''}`} onClick={() => documents.length ? setSourcePicker(!sourcePicker) : onOpenSources()} aria-expanded={sourcePicker}><Paperclip size={13} /> {selectedDocs.length ? `${selectedDocs.length} source${selectedDocs.length > 1 ? 's' : ''}` : 'Add sources'} {documents.length > 0 && <ChevronDown size={12} />}</button>
-                <AnimatePresence>{sourcePicker && <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="esc-source-picker"><div className="mb-2 flex items-center justify-between text-xs text-[#bbb0ce]"><span>Answer only from selected sources</span><button aria-label="Close source selection" onClick={() => setSourcePicker(false)}><X size={13} /></button></div>{documents.map(document => <label key={document.id} className="flex items-center gap-2 py-2 text-xs"><input type="checkbox" checked={!excludedSources.includes(document.id)} onChange={() => setExcludedSources(previous => previous.includes(document.id) ? previous.filter(id => id !== document.id) : [...previous, document.id])} /><span className="truncate">{document.name}</span></label>)}</motion.div>}</AnimatePresence>
-              </div>
+        <PromptInput
+          value={prompt}
+          onChange={setPrompt}
+          onSubmit={() => void send()}
+          onStop={() => streamRef.current?.abort()}
+          onVoice={toggleVoice}
+          busy={busy}
+          listening={listening}
+          textareaRef={textareaRef}
+          placeholder={selectedDocs.length ? 'Ask anything about your sources…' : 'Ask a question, untangle a concept, or dream up a plan…'}
+          identity={<BrandMark className="size-4 object-contain" />}
+          status={listening ? <AIStatus state="listening" label="Listening to you…" size={20} compact /> : undefined}
+          voiceIndicator={<ThinkingOrb state="listening" size={20} theme="auto" />}
+          toolbar={<>
+            <button type="button" className="esc-icon-button" onClick={onOpenSources} aria-label="Attach sources"><Plus size={19} /></button>
+            <div className="relative">
+              <button type="button" className={`esc-source-button ${selectedDocs.length ? 'has-sources' : ''}`} onClick={() => documents.length ? setSourcePicker(!sourcePicker) : onOpenSources()} aria-expanded={sourcePicker}><Paperclip size={13} /> {selectedDocs.length ? `${selectedDocs.length} source${selectedDocs.length > 1 ? 's' : ''}` : 'Add sources'} {documents.length > 0 && <ChevronDown size={12} />}</button>
+              <AnimatePresence>{sourcePicker && <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="esc-source-picker"><div className="mb-2 flex items-center justify-between text-xs text-[#bbb0ce]"><span>Answer only from selected sources</span><button type="button" aria-label="Close source selection" onClick={() => setSourcePicker(false)}><X size={13} /></button></div>{documents.map(document => <label key={document.id} className="flex items-center gap-2 py-2 text-xs"><input type="checkbox" checked={!excludedSources.includes(document.id)} onChange={() => setExcludedSources(previous => previous.includes(document.id) ? previous.filter(id => id !== document.id) : [...previous, document.id])} /><span className="truncate">{document.name}</span></label>)}</motion.div>}</AnimatePresence>
             </div>
-            <div className="flex items-center gap-2"><button className={`esc-icon-button ${listening ? 'text-[#c5b2f4]' : ''}`} disabled={busy} onClick={toggleVoice} aria-label={listening ? 'Stop voice input' : 'Start voice input'} aria-pressed={listening}>{listening ? <ThinkingOrb state="listening" size={20} /> : <Mic size={17} />}</button><button className="esc-send-button" aria-label={busy ? 'Stop response' : 'Send message'} onClick={() => busy ? streamRef.current?.abort() : void send()} disabled={!busy && !prompt.trim()}>{busy ? <Square size={14} fill="currentColor" /> : <ArrowUp size={18} />}</button></div>
-          </div>
-        </div>
+          </>}
+        />
         <p className="esc-composer-footnote">{storageWarning || (selectedDocs.length ? 'Grounded in your selected sources. A clearer answer starts with good context.' : 'A thinking partner, at your pace. Always double-check important details.')}</p>
       </div>
     </div>

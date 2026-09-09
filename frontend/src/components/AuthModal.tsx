@@ -1,17 +1,25 @@
-import { useState, useEffect } from 'react';
-import { ArrowRight, CheckCircle2, Eye, EyeOff, X } from 'lucide-react';
-import { OrbLoader as Loader2 } from './ui/OrbLoader';
+import { useEffect, useState } from 'react';
+import { ArrowLeft, ArrowRight, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { OrbLoader } from './ui/OrbLoader';
+import { SignInPage, type SignInMode } from './ui/sign-in-flow-1';
 import { localAuth } from '../lib/localAuth';
 import { useAuth } from '../auth/AuthProvider';
-import BrandMark from './ui/BrandMark';
 import '../styles/auth.css';
 
-interface AuthModalProps { mode: 'signin' | 'signup'; onClose: () => void; onSuccess: () => void; }
+interface AuthModalProps {
+  mode: SignInMode;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+type AuthStage = 'email' | 'credentials';
+
 const passwordRules = (value: string) => value.length >= 8;
 
 export default function AuthModal({ mode: initialMode, onClose, onSuccess }: AuthModalProps) {
   const { refreshUser } = useAuth();
-  const [currentMode, setCurrentMode] = useState<'signin' | 'signup'>(initialMode);
+  const [currentMode, setCurrentMode] = useState<SignInMode>(initialMode);
+  const [stage, setStage] = useState<AuthStage>('email');
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -19,16 +27,39 @@ export default function AuthModal({ mode: initialMode, onClose, onSuccess }: Aut
   const [confirmation, setConfirmation] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  
+
   const isSignup = currentMode === 'signup';
 
-  useEffect(() => { setCurrentMode(initialMode); }, [initialMode]);
+  useEffect(() => {
+    setCurrentMode(initialMode);
+    setStage('email');
+    setError('');
+  }, [initialMode]);
+
+  const changeMode = (nextMode: SignInMode) => {
+    if (loading || nextMode === currentMode) return;
+    setCurrentMode(nextMode);
+    setStage('email');
+    setPassword('');
+    setConfirmation('');
+    setShowPassword(false);
+    setError('');
+  };
+
+  const continueWithEmail = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!email.trim()) return;
+    setError('');
+    setStage('credentials');
+  };
 
   const submit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError('');
-    if (isSignup && !passwordRules(password)) { setError('Use a password with at least 8 characters.'); return; }
+    if (isSignup && !name.trim()) { setError('Enter your full name.'); return; }
+    if (!passwordRules(password)) { setError('Use a password with at least 8 characters.'); return; }
     if (isSignup && password !== confirmation) { setError('Passwords do not match.'); return; }
+
     setLoading(true);
     try {
       if (isSignup) {
@@ -39,77 +70,164 @@ export default function AuthModal({ mode: initialMode, onClose, onSuccess }: Aut
       await refreshUser();
       onSuccess();
     } catch (reason) {
-      const message = reason instanceof Error ? reason.message : 'Something went wrong. Please try again.';
-      setError(message);
+      setError(reason instanceof Error ? reason.message : 'Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
     }
-    finally { setLoading(false); }
   };
 
-  return <div data-theme="dark" className="esc-auth fixed inset-0 z-50 grid place-items-center bg-slate-900/40 p-4 backdrop-blur-sm" onMouseDown={onClose}>
-    <section role="dialog" aria-modal="true" aria-labelledby="auth-title" className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-7 shadow-2xl" onMouseDown={event => event.stopPropagation()}>
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-3.5">
-          <span className="esc-auth-brand-shell"><BrandMark className="esc-auth-brand-mark" /></span>
-          <div>
-            <span className="inline-flex rounded-full bg-primary-50 px-3 py-1 text-[11px] font-semibold tracking-wide text-primary-700">SECURE ACCESS</span>
-            <h2 id="auth-title" className="mt-3 text-2xl font-semibold tracking-tight text-slate-900">{isSignup ? 'Create your ESC account' : 'Sign in to ESC'}</h2>
-            <p className="mt-2 text-sm leading-relaxed text-slate-500">{isSignup ? 'Your workspace is protected by your email and password.' : 'Access your secured workspace.'}</p>
-          </div>
-        </div>
-        <button onClick={onClose} className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Close">
-          <X className="h-5 w-5" />
-        </button>
-      </div>
-      
-      <form onSubmit={submit} className="mt-7 space-y-4">
-        {isSignup && (
-          <label className="block text-sm font-medium text-slate-700">
-            Full name
-            <input required minLength={2} value={name} onChange={event => setName(event.target.value)} autoComplete="name" placeholder="Your full name" className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-50" />
-          </label>
-        )}
-        <label className="block text-sm font-medium text-slate-700">
-          Email
-          <input required type="email" value={email} onChange={event => setEmail(event.target.value)} autoComplete="email" placeholder="you@example.com" className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-50" />
-        </label>
-        <label className="block text-sm font-medium text-slate-700">
-          Password
-          <div className="relative mt-1.5">
-            <input required minLength={8} type={showPassword ? 'text' : 'password'} value={password} onChange={event => setPassword(event.target.value)} autoComplete={isSignup ? 'new-password' : 'current-password'} placeholder={isSignup ? 'Create a password' : 'Your password'} className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-11 text-sm outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-50" />
-            <button type="button" onClick={() => setShowPassword(value => !value)} className="absolute right-2 top-2 rounded-md p-1.5 text-slate-400 hover:text-slate-700" aria-label={showPassword ? 'Hide password' : 'Show password'}>
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-        </label>
-        {isSignup && (
-          <>
-            <p className={`text-xs ${password && !passwordRules(password) ? 'text-amber-700' : 'text-slate-500'}`}>Use at least 8 characters.</p>
-            <label className="block text-sm font-medium text-slate-700">
-              Confirm password
-              <input required type="password" minLength={8} value={confirmation} onChange={event => setConfirmation(event.target.value)} autoComplete="new-password" placeholder="Repeat your password" className="mt-1.5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none transition focus:border-primary-400 focus:ring-4 focus:ring-primary-50" />
-            </label>
-          </>
-        )}
-        
-        {error && <p role="alert" className="rounded-lg border border-rose-100 bg-rose-50 px-3 py-2 text-[13px] leading-5 text-rose-700">{error}</p>}
-        
-        <button disabled={loading} className="mt-2 flex w-full items-center justify-center gap-2 rounded-xl bg-primary-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-primary-700 disabled:cursor-not-allowed disabled:bg-primary-400">
-          {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : <>{isSignup ? 'Create secure account' : 'Sign in securely'} <ArrowRight className="h-4 w-4" /></>}
-        </button>
-      </form>
-      
-      <div className="mt-6 flex flex-col items-center gap-4">
-        <button 
-          type="button" 
-          onClick={() => { setError(''); setCurrentMode(isSignup ? 'signin' : 'signup'); }} 
-          className="text-sm font-medium text-slate-600 hover:text-primary-700 transition"
-        >
-          {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
-        </button>
-        <p className="flex items-center gap-1.5 text-xs text-slate-400">
-          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" /> Secure local authentication
+  const heading = stage === 'email'
+    ? (isSignup ? 'Study with more direction.' : 'Welcome back.')
+    : (isSignup ? 'Make the workspace yours.' : 'Continue where you left off.');
+  const description = stage === 'email'
+    ? (isSignup
+      ? 'Create one secure space for your sources, web research, specialist agents, and study plan.'
+      : 'Sign in to return to your conversations, sources, progress, and study plan.')
+    : (isSignup
+      ? `Create the secure password for ${email.trim()}.`
+      : `Enter the password connected to ${email.trim()}.`);
+
+  return (
+    <SignInPage
+      mode={currentMode}
+      onModeChange={changeMode}
+      onClose={onClose}
+      heading={heading}
+      description={description}
+      viewKey={`${currentMode}-${stage}`}
+      busy={loading}
+      footer={(
+        <p className="esc-auth-security-note">
+          <CheckCircle2 size={14} aria-hidden="true" />
+          Your password is salted and hashed by ESC. Only the session is kept in this tab.
         </p>
-      </div>
-    </section>
-  </div>;
+      )}
+    >
+      {stage === 'email' ? (
+        <>
+          <form className="esc-auth-email-form" onSubmit={continueWithEmail}>
+            <label className="sr-only" htmlFor="esc-auth-email">Email address</label>
+            <div className="esc-auth-email-row">
+              <input
+                id="esc-auth-email"
+                data-auth-autofocus
+                required
+                type="email"
+                name="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                autoComplete="email"
+                placeholder="you@example.com"
+              />
+              <button type="submit" aria-label="Continue with this email">
+                <ArrowRight size={19} aria-hidden="true" />
+              </button>
+            </div>
+          </form>
+
+          <div className="esc-auth-divider"><span>secure email access</span></div>
+          <button type="button" className="esc-auth-mode-link" onClick={() => changeMode(isSignup ? 'signin' : 'signup')}>
+            {isSignup ? 'Already have an account? Sign in' : 'New to ESC? Create your account'}
+          </button>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            className="esc-auth-email-back"
+            onClick={() => { setStage('email'); setError(''); }}
+            disabled={loading}
+          >
+            <ArrowLeft size={14} aria-hidden="true" />
+            <span>{email.trim()}</span>
+          </button>
+
+          <form className="esc-auth-credentials" onSubmit={submit}>
+            <input
+              className="esc-auth-username-proxy"
+              type="email"
+              name="email"
+              value={email}
+              autoComplete="username"
+              readOnly
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+            {isSignup && (
+              <label>
+                <span>Full name</span>
+                <input
+                  data-auth-autofocus
+                  required
+                  minLength={2}
+                  name="name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  autoComplete="name"
+                  placeholder="Your full name"
+                  disabled={loading}
+                />
+              </label>
+            )}
+
+            <label>
+              <span>Password</span>
+              <div className="esc-auth-password-field">
+                <input
+                  data-auth-autofocus={!isSignup ? true : undefined}
+                  required
+                  minLength={8}
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete={isSignup ? 'new-password' : 'current-password'}
+                  placeholder={isSignup ? 'Create a password' : 'Your password'}
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((value) => !value)}
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  disabled={loading}
+                >
+                  {showPassword ? <EyeOff size={17} aria-hidden="true" /> : <Eye size={17} aria-hidden="true" />}
+                </button>
+              </div>
+            </label>
+
+            {isSignup && (
+              <>
+                <p className={`esc-auth-password-hint ${password && !passwordRules(password) ? 'is-warning' : ''}`}>
+                  Use at least 8 characters.
+                </p>
+                <label>
+                  <span>Confirm password</span>
+                  <input
+                    required
+                    type="password"
+                    minLength={8}
+                    name="password-confirmation"
+                    value={confirmation}
+                    onChange={(event) => setConfirmation(event.target.value)}
+                    autoComplete="new-password"
+                    placeholder="Repeat your password"
+                    disabled={loading}
+                  />
+                </label>
+              </>
+            )}
+
+            {error && <p role="alert" className="esc-auth-error">{error}</p>}
+
+            <button type="submit" className="esc-auth-submit" disabled={loading}>
+              {loading
+                ? <><OrbLoader className="size-5" state="working" /> <span>{isSignup ? 'Creating your workspace' : 'Signing you in'}</span></>
+                : <><span>{isSignup ? 'Create secure account' : 'Sign in securely'}</span> <ArrowRight size={18} aria-hidden="true" /></>}
+            </button>
+          </form>
+        </>
+      )}
+    </SignInPage>
+  );
 }
