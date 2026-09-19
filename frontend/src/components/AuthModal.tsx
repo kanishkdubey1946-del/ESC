@@ -53,24 +53,45 @@ export default function AuthModal({ mode: initialMode, onClose, onSuccess }: Aut
     setStage('credentials');
   };
 
-  const submit = async (event: React.FormEvent) => {
+  const submit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError('');
-    if (isSignup && !name.trim()) { setError('Enter your full name.'); return; }
-    if (!passwordRules(password)) { setError('Use a password with at least 8 characters.'); return; }
-    if (isSignup && password !== confirmation) { setError('Passwords do not match.'); return; }
+
+    // Password managers can update form controls without firing React change
+    // events. Read the submitted controls so an autofilled password always stays
+    // paired with the username selected by the password manager.
+    const formData = new FormData(event.currentTarget);
+    const submittedEmail = String(formData.get('email') ?? email).trim();
+    const submittedPassword = String(formData.get('password') ?? password);
+    const submittedName = String(formData.get('name') ?? name).trim();
+    const submittedConfirmation = String(formData.get('password-confirmation') ?? confirmation);
+
+    setEmail(submittedEmail);
+    setPassword(submittedPassword);
+    if (isSignup) {
+      setName(submittedName);
+      setConfirmation(submittedConfirmation);
+    }
+
+    if (!submittedEmail) { setError('Enter your email address.'); return; }
+    if (isSignup && !submittedName) { setError('Enter your full name.'); return; }
+    if (!passwordRules(submittedPassword)) { setError('Use a password with at least 8 characters.'); return; }
+    if (isSignup && submittedPassword !== submittedConfirmation) { setError('Passwords do not match.'); return; }
 
     setLoading(true);
     try {
       if (isSignup) {
-        await localAuth.register({ email: email.trim(), password, name: name.trim() });
+        await localAuth.register({ email: submittedEmail, password: submittedPassword, name: submittedName });
       } else {
-        await localAuth.signIn({ email: email.trim(), password });
+        await localAuth.signIn({ email: submittedEmail, password: submittedPassword });
       }
       await refreshUser();
       onSuccess();
     } catch (reason) {
-      setError(reason instanceof Error ? reason.message : 'Something went wrong. Please try again.');
+      const message = reason instanceof Error ? reason.message : 'Something went wrong. Please try again.';
+      setError(!isSignup && message === 'Email or password is incorrect.'
+        ? `That email/password pair was not found. Check ${submittedEmail} or choose its matching saved login.`
+        : message);
     } finally {
       setLoading(false);
     }
@@ -148,8 +169,8 @@ export default function AuthModal({ mode: initialMode, onClose, onSuccess }: Aut
               type="email"
               name="email"
               value={email}
+              onChange={(event) => setEmail(event.target.value)}
               autoComplete="username"
-              readOnly
               tabIndex={-1}
               aria-hidden="true"
             />
