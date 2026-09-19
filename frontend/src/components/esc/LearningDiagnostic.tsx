@@ -4,6 +4,7 @@ import { ArrowRight, Check, RotateCcw } from 'lucide-react';
 import { escApi } from '../../lib/escApi';
 import { AIStatus } from '../ui/AIStatus';
 import { DashboardCard } from '../ui/DashboardCard';
+import MathText from '../ui/MathText';
 import { fieldClass, primaryButton, secondaryButton, errorClass, readableError } from './learningTypes';
 import type { LearningProfile, QuizAttempt } from './learningTypes';
 
@@ -48,8 +49,8 @@ export default function LearningDiagnostic({ profile, sources, onCompleted }: {
     {quiz && !result && <div className="mt-6 space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 pb-4"><h3 className="text-sm font-medium text-[#eeeaf7]">{quiz.title}</h3><p className="text-xs text-[#96949f]">{Object.keys(answers).length}/{quiz.questions.length} answered · {quiz.durationMinutes} minute session</p></div>
       {quiz.questions.map((question, index) => <fieldset key={question.id} disabled={Boolean(loading)} className="rounded-2xl border border-white/10 p-4 sm:p-5">
-        <legend className="px-2 text-sm font-medium leading-6 text-[#ebe7f2]"><span className="mr-2 text-[#b7a1f8]">{String(index + 1).padStart(2, '0')}</span>{question.prompt}</legend>
-        <div className="mt-1 grid gap-2">{question.options.map((option, optionIndex) => <label key={optionIndex} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 text-sm leading-6 transition ${answers[question.id] === optionIndex ? 'border-[#b7a1f8]/50 bg-[#b7a1f8]/10 text-[#e5dafc]' : 'border-white/[.06] text-[#b5b1bf] hover:border-white/20 hover:bg-white/[.03]'}`}><input className="mt-1 accent-[#b7a1f8]" type="radio" name={question.id} checked={answers[question.id] === optionIndex} onChange={() => setAnswers({ ...answers, [question.id]: optionIndex })} />{option}</label>)}</div>
+        <legend className="px-2 text-sm font-medium leading-6 text-[#ebe7f2]"><span className="mr-2 text-[#b7a1f8]">{String(index + 1).padStart(2, '0')}</span><MathText text={question.prompt} /></legend>
+        <div className="mt-1 grid gap-2">{question.options.map((option, optionIndex) => <label key={optionIndex} className={`flex cursor-pointer items-start gap-3 rounded-xl border px-4 py-3 text-sm leading-6 transition ${answers[question.id] === optionIndex ? 'border-[#b7a1f8]/50 bg-[#b7a1f8]/10 text-[#e5dafc]' : 'border-white/[.06] text-[#b5b1bf] hover:border-white/20 hover:bg-white/[.03]'}`}><input className="mt-1 accent-[#b7a1f8]" type="radio" name={question.id} checked={answers[question.id] === optionIndex} onChange={() => setAnswers({ ...answers, [question.id]: optionIndex })} /><MathText text={option} /></label>)}</div>
       </fieldset>)}
       <div className="flex flex-wrap items-center gap-4"><button type="button" onClick={() => void submit()} disabled={Boolean(loading)} className={primaryButton}>Finish & see my insights <ArrowRight size={15} /></button><span className="text-xs text-[#96949f]">Unanswered questions are marked as skipped.</span></div>
     </div>}

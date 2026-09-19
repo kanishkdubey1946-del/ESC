@@ -1,5 +1,6 @@
 import { splitCitedText } from '../../utils/research';
 import type { SourceRecord } from '../../types/sources';
+import MathText from '../ui/MathText';
 
 export default function CitedText({
   text,
@@ -18,7 +19,7 @@ export default function CitedText({
   return (
     <span className={className}>
       {parts.map((part, index) => {
-        if (part.type === 'text') return <span key={index}>{part.value}</span>;
+        if (part.type === 'text') return <MathText key={index} text={part.value} />;
         const source = sources?.find(s => s.citationNumber === part.n);
         return (
           <button
