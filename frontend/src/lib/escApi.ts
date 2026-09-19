@@ -15,13 +15,13 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!(init.body instanceof FormData)) headers.set('Content-Type', 'application/json');
   let response: Response;
   try {
-    response = await fetch(`${baseUrl}${path}`, { ...init, headers });
+    response = await fetch(`${baseUrl}${path}`, { ...init, headers, signal: init.signal ?? AbortSignal.timeout(90_000) });
   } catch {
-    throw new Error('The ESC backend is not running. Start it on port 8000.');
+    throw new Error('The study service is taking too long or cannot be reached. Check your connection and try again.');
   }
   if (!response.ok) {
     const body = await response.json().catch(() => null) as { detail?: string } | null;
-    throw new Error(body?.detail || 'ESC could not complete that request.');
+    throw new Error(typeof body?.detail === 'string' ? body.detail : 'Check your entries and try again. ESC could not complete that request.');
   }
   return response.json() as Promise<T>;
 }

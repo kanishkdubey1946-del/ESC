@@ -7,6 +7,11 @@ export interface AgentResult<T> {
   data?: T;
   error?: string;
   provider?: string;
+  model?: string;
+  runtime?: string;
+  agentId?: string;
+  agentName?: string;
+  delegatedAgents?: string[];
   timestamp: string;
   sources?: SourceRecord[];
   claims?: EvidenceClaim[];

@@ -77,7 +77,7 @@
 .esc-chat-layout { display: flex; width: 100%; min-width: 0; height: 100%; }
 .esc-chat-main { display: flex; flex: 1; flex-direction: column; position: relative; min-width: 0; min-height: 0; background: radial-gradient(ellipse at 55% 30%,#b49bdb04,transparent 60%); }
 .esc-chat-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: 38px 36px 10px; }
-.esc-chat-scroll.is-empty { display: flex; align-items: center; }
+.esc-chat-scroll.is-empty { display: flex; align-items: safe center; }
 .esc-chat-welcome { width: 100%; max-width: 740px; margin: auto; padding-bottom: 12px; }
 .esc-orb-stage { width: 136px; height: 136px; position: relative; display: grid; place-items: center; margin: 0 auto 22px; }
 .esc-orb-stage > canvas, .esc-orb-stage > span:not(.esc-orbit-dot) { transform: scale(1.65); }
@@ -164,6 +164,34 @@
 .esc-workspace[data-theme='light'] .esc-ai-input-textarea { color: var(--esc-text); }
 .esc-workspace[data-theme='light'] .esc-ai-input-textarea::placeholder { color: var(--esc-muted); }
 .esc-workspace[data-theme='light'] .esc-ai-input-action { --tw-ring-offset-color: #fff; background: #7a5fd0; color: #fff; box-shadow: 0 7px 20px rgba(109,85,200,.18); }
+/* Light mode must be authored, not inferred from dark utility colours. These
+   surfaces contain the interactive dashboard, chat, animation, and specialist
+   views, so each uses the same high-contrast token set. */
+.esc-workspace[data-theme='light'] .esc-dashboard-page,
+.esc-workspace[data-theme='light'] .esc-specialist-page { background: var(--esc-bg); color: var(--esc-text); }
+.esc-workspace[data-theme='light'] .esc-dashboard-card { background: rgba(255,255,255,.94); border-color: rgba(38,32,51,.13); box-shadow: 0 8px 24px rgba(38,32,51,.08); }
+.esc-workspace[data-theme='light'] .esc-dashboard-card [class*="bg-[#212326"],
+.esc-workspace[data-theme='light'] .esc-dashboard-card [class*="bg-[#1b1d22"],
+.esc-workspace[data-theme='light'] .esc-dashboard-card [class*="bg-[#211d29"],
+.esc-workspace[data-theme='light'] .esc-dashboard-card [class*="bg-[#262030"],
+.esc-workspace[data-theme='light'] .esc-dashboard-card [class*="bg-[#1a1a20"] { background-image: none; background-color: #f4f1fb !important; }
+.esc-workspace[data-theme='light'] .esc-dashboard-orb,
+.esc-workspace[data-theme='light'] .esc-specialist-page [class*="bg-[#191a20"],
+.esc-workspace[data-theme='light'] .esc-specialist-page [class*="bg-[#1c1c24"] { background-color: #fff !important; border-color: rgba(38,32,51,.14) !important; }
+.esc-workspace[data-theme='light'] .esc-specialist-page [class*="bg-[#101114"] { background-color: #f6f5f9 !important; }
+.esc-workspace[data-theme='light'] .esc-specialist-page input { color: var(--esc-text); }
+.esc-workspace[data-theme='light'] .esc-specialist-page input::placeholder { color: #655f70; }
+.esc-workspace[data-theme='light'] .esc-ai-status { border-color: rgba(38,32,51,.14); background: rgba(255,255,255,.9); }
+.esc-workspace[data-theme='light'] .esc-ai-status-label { color: #40394d; }
+.esc-workspace[data-theme='light'] .esc-chat-avatar { background: #f1edfb; border-color: rgba(109,85,200,.25); }
+.esc-workspace[data-theme='light'] .esc-user-bubble { background: #eee9fb; border-color: rgba(109,85,200,.24); }
+.esc-workspace[data-theme='light'] .esc-orb-halo { background: radial-gradient(circle,rgba(109,85,200,.17),rgba(109,85,200,.06) 46%,transparent 70%); }
+.esc-workspace[data-theme='light'] .esc-orbit-dot { background: #624ab4; opacity: .9; box-shadow: 0 0 12px rgba(98,74,180,.55); }
+.esc-workspace[data-theme='light'] .esc-context-art { color: #624ab4; }
+.esc-workspace[data-theme='light'] .esc-art-ring { border-color: rgba(98,74,180,.32); }
+.esc-workspace[data-theme='light'] .esc-art-ring.ring-two { border-color: rgba(98,74,180,.24); }
+.esc-workspace[data-theme='light'] .esc-art-ring.ring-three { border-color: rgba(98,74,180,.2); }
+.esc-workspace[data-theme='light'] .esc-context-art::after { background: radial-gradient(circle,rgba(109,85,200,.12),transparent 65%); }
 @media(min-width:1600px) { .esc-sidebar { width: 250px; }.esc-context-panel { width: 260px; padding-left: 30px; padding-right: 30px; }.esc-chat-welcome h1 { font-size: 50px; }.esc-starters { margin-top: 48px; }.esc-orb-stage { margin-bottom: 30px; }.esc-composer-region { padding-bottom: 26px; } }
 @media(max-width:1279px) { .esc-context-panel { display: none; }.esc-chat-welcome { max-width: 690px; }.esc-chat-scroll { padding-top: 30px; } }
 @media(max-width:767px) { .esc-topbar { height: 58px; padding: 0 15px; }.esc-chat-scroll { padding: 24px 20px 8px; }.esc-chat-scroll.is-empty { align-items: flex-start; }.esc-orb-stage { width: 100px; height: 100px; margin-bottom: 20px; }.esc-orb-stage > span { transform: scale(1.2); }.esc-chat-welcome h1 { font-size: 31px; margin-top: 18px; }.esc-welcome-kicker { font-size: 8px; letter-spacing: .1em; }.esc-chat-welcome > p { font-size: 11px; margin-top: 14px; }.esc-starters { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 9px; margin-top: 27px; }.esc-starter { min-height: 104px; padding: 12px; }.esc-starter strong { margin-top: 14px; }.esc-starter > span { font-size: 9px; }.esc-composer-region { padding: 10px 15px 12px; }.esc-context-panel { display: none; }.esc-library-page { padding: 25px 16px; }.esc-library-page h1 { font-size: 25px; }.esc-source-picker { left: -38px; width: min(290px,calc(100vw - 40px)); }.esc-answer-sources { margin-left: 0; }.esc-skip-link { left: 10px; } }

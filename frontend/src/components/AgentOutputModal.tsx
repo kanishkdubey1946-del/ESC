@@ -279,6 +279,7 @@ export default function AgentOutputModal({
                 <p style={{ margin: '4px 0 0', fontSize: 12, color: '#64748b' }}>
                   <span style={{ color: usable ? '#0284C7' : '#64748b' }}>● {statusText}</span>
                   {result?.timestamp ? ` · Updated: ${formatRetrievedDate(result.timestamp)}` : ''}
+                  {result?.runtime === 'google-adk' ? ' · Google ADK agent' : ''}
                   {verifiedSources.length ? ` · ${verifiedSources.length} verified source${verifiedSources.length === 1 ? '' : 's'}` : ''}
                   {result?.retrievedAt ? ` · Data as of ${formatRetrievedDate(result.retrievedAt)}` : ''}
                 </p>

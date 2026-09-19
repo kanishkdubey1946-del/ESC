@@ -54,7 +54,7 @@ function loadSession(mode: WorkspaceMode): Record<string, unknown> | null {
 type ExtendedStatus = 'ready' | 'selected' | 'queued' | 'waiting' | 'running' | 'completed' | 'failed';
 
 const STATUS_LABELS: Record<ExtendedStatus, string> = {
-  ready: 'Ready',
+  ready: 'Not run',
   selected: 'Selected',
   queued: 'Queued',
   waiting: 'Waiting for dependency',
@@ -848,7 +848,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
   return (
     <>
       {/* Center Panel */}
-      <div className="flex min-w-0 flex-1 flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm">
+      <div className="flex min-h-[70dvh] min-w-0 flex-1 shrink-0 flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-sm xl:min-h-0">
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 sm:px-5">
           <div className="flex min-w-0 items-center gap-2">
             <h2 className="text-[15px] font-semibold text-slate-900 capitalize">{mode} Chat</h2>
@@ -1121,7 +1121,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
       </div>
 
       {/* Right Studio Panel */}
-      <aside className="hidden h-full w-[300px] shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200/90 bg-slate-50/90 shadow-sm xl:flex 2xl:w-[320px]">
+      <aside aria-label="Agent selection and reports" className="flex max-h-[65dvh] w-full shrink-0 flex-col overflow-y-auto rounded-2xl border border-slate-200/90 bg-slate-50/90 shadow-sm xl:h-full xl:max-h-none xl:w-[300px] 2xl:w-[320px]">
         <div className="sticky top-0 z-[1] flex items-center justify-between border-b border-slate-200 bg-white/95 px-4 py-3.5 backdrop-blur sm:px-5">
           <h2 className="text-[15px] font-semibold text-slate-900 capitalize">{mode} Studio</h2>
           <span className="rounded-full bg-primary-50 px-2.5 py-1 text-[10px] font-semibold text-primary-700">
@@ -1183,6 +1183,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
                       <p className="text-[12px] font-semibold text-slate-800 truncate">{agent.name}</p>
                       {orchestrationMode === 'manual' && !running && (
                         <button 
+                          aria-label={`Select ${agent.name}`} aria-pressed={isSelected}
                           onClick={() => toggleAgent(agent.id)}
                           className={`ml-1 h-5 w-5 shrink-0 rounded flex items-center justify-center transition ${
                             isSelected ? 'bg-primary-600 text-white' : 'border border-slate-300 hover:border-slate-400'
@@ -1199,7 +1200,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
                       )}
                     </p>
                   </div>
-                  <button onClick={() => setExpandedAgent(isExpanded ? null : agent.id)} className="mt-1 text-slate-400 hover:text-slate-600">
+                  <button aria-label={`About ${agent.name}`} aria-expanded={isExpanded} onClick={() => setExpandedAgent(isExpanded ? null : agent.id)} className="mt-1 p-2 text-slate-400 hover:text-slate-600">
                     {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
                   </button>
                 </div>
@@ -1224,6 +1225,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
                   <button
                     type="button"
                     onClick={() => openAgentView(agent.id)}
+                    aria-label={`View ${agent.name} report`} disabled={!hasOutput && !hasFailed}
                     className={`flex flex-1 items-center justify-center gap-1 rounded-lg border py-1.5 text-[10px] font-semibold transition ${
                       selectedOutput === agent.id
                         ? 'border-primary-300 bg-primary-600 text-white'
@@ -1247,6 +1249,7 @@ export default function DynamicOrchestrator({ mode = 'student' }: { mode?: Works
                     <button
                       type="button"
                       onClick={() => copyOutput(agent.id)}
+                      aria-label={`Copy ${agent.name} report`}
                       className="rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-slate-400 hover:text-slate-600 transition"
                     >
                       <Copy className="h-3 w-3" />

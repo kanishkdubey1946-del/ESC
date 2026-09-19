@@ -26,16 +26,16 @@ export function AIStatus({ state, label, size = 20, compact = false, className =
 
   return (
     <span
-      className={`inline-flex items-center gap-2.5 ${compact ? '' : 'rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-2'} ${className}`}
+      className={`esc-ai-status inline-flex items-center gap-2.5 ${compact ? '' : 'rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-2'} ${className}`}
       role="status"
       aria-live="polite"
       aria-atomic="true"
       data-ai-state={state}
     >
       <span aria-hidden="true" className="inline-flex shrink-0 items-center justify-center">
-        <ThinkingOrb state={state} size={size} theme="dark" />
+        <ThinkingOrb state={state} size={size} theme="auto" />
       </span>
-      <span className="text-xs font-medium leading-relaxed text-[#b7b4c2]">{statusLabel}</span>
+      <span className="esc-ai-status-label text-xs font-medium leading-relaxed text-[#b7b4c2]">{statusLabel}</span>
     </span>
   )
 }

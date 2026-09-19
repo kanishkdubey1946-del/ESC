@@ -46,7 +46,7 @@ export default function AgentPlayground({ mode, onQuickLaunch }: AgentPlayground
     : 'Choose a focused AI expert for a dedicated conversation.';
 
   return (
-    <div className="flex h-full min-h-0 flex-1 overflow-y-auto bg-[#101114] p-5 text-[#f2f0f7] sm:p-8 lg:p-10" data-theme="dark">
+    <div className="esc-specialist-page flex h-full min-h-0 flex-1 overflow-y-auto bg-[#101114] p-5 text-[#f2f0f7] sm:p-8 lg:p-10">
       <div className="mx-auto w-full max-w-[1180px] pb-8">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-[580px]">
@@ -57,7 +57,7 @@ export default function AgentPlayground({ mode, onQuickLaunch }: AgentPlayground
             <p className="mt-3 max-w-lg text-[13px] leading-relaxed text-[#96949f]">{subheading}</p>
           </div>
           <div className="flex items-center gap-3 rounded-2xl border border-white/[0.06] bg-white/[0.025] py-1.5 pl-2 pr-5">
-            <ThinkingOrb state="listening" size={64} theme="dark" />
+            <ThinkingOrb state="listening" size={64} theme="auto" />
             <div>
               <p className="text-xs font-medium text-[#d6d0e4]">{allSpecialists.length} focused specialists</p>
               <p className="mt-1 text-[11px] text-[#96949f]">One connected study space</p>

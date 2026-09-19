@@ -71,7 +71,9 @@ def create_personalized_plan(
                 tasks.append({
                     "date": task_day.isoformat(), "topic": state["topic"], "action": action,
                     "durationMinutes": duration, "priority": state["priority"],
-                    "rationale": f"Mastery is {state['mastery']:.0f}; latest accuracy is {state['latestAccuracy']:.0f}% and trend is {state['trend']}.",
+                    "rationale": ("Not yet assessed. Scheduled from the topics you selected; complete a diagnostic to establish a baseline."
+                                  if state["trend"] == "insufficient" and not state["confidence"]
+                                  else f"Mastery is {state['mastery']:.0f}; latest accuracy is {state['latestAccuracy']:.0f}% and trend is {state['trend']}."),
                     "resourceId": resource["id"] if resource else None,
                     "resourceReference": resource["urlOrReference"] if resource else None,
                 })
@@ -94,7 +96,9 @@ def create_personalized_plan(
         unfinished = sum(1 for task in old_plan["tasks"] if not task["completed"])
         if unfinished:
             change_summary.append({"topic": "Plan", "change": "rescheduled", "reason": f"{unfinished} incomplete task(s) were considered in this new plan version."})
-    if not tasks:
+    if not priorities:
+        summary = "Choose topics in study preferences or complete a diagnostic before generating a schedule."
+    elif not tasks:
         summary = "No study tasks were scheduled because the profile has no available study minutes. Update availability to generate a feasible plan."
     else:
         summary = f"Versioned {days}-day plan with {len(tasks)} task(s), constrained to your declared availability."

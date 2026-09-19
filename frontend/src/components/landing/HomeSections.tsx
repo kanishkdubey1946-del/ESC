@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { ArrowUpRight, BookOpen, CalendarDays, GitBranch, Globe2, ListChecks, SlidersHorizontal } from 'lucide-react';
 import Globe from '../ui/globe';
+import { STUDENT_SPECIALIST_LIBRARY } from '../../lib/studentSpecialists';
 
 const fade = {
   initial: { opacity: 0 },
@@ -8,12 +9,6 @@ const fade = {
   viewport: { once: true, amount: 0.15 },
   transition: { duration: 0.3 },
 };
-
-const SPECIALISTS = [
-  'StudyVault', 'Concept Clarifier', 'QuizForge', 'ExamInsight',
-  'MindMap Maker', 'Essay Coach', 'Formula Solver', 'Citation Builder',
-  'Flashcard Forge', 'Research Scout', 'Language Tutor', 'PlannerBot',
-];
 
 export function SpecialistMarquee() {
   return (
@@ -23,7 +18,7 @@ export function SpecialistMarquee() {
         <h2 id="specialists-heading">The right help for the task.</h2>
       </div>
       <ul className="sp-specialist-list">
-        {SPECIALISTS.map((name) => <li key={name}>{name}</li>)}
+        {STUDENT_SPECIALIST_LIBRARY.map(({ id, name }) => <li key={id}>{name}</li>)}
       </ul>
     </section>
   );
@@ -32,7 +27,7 @@ export function SpecialistMarquee() {
 const FEATURES = [
   { icon: BookOpen, title: 'Student Companion', text: 'Work through a difficult topic, ask a follow-up, and keep the explanation alongside your notes.' },
   { icon: SlidersHorizontal, title: 'Specialist Playground', text: 'Choose a specialist for the work at hand, from checking an argument to explaining a formula.' },
-  { icon: Globe2, title: 'Web research and sources', text: 'Search the web for current information or add PDFs, notes, links, and videos. Keep the evidence behind every answer.' },
+  { icon: Globe2, title: 'Web research and sources', text: 'Search for current web sources or add readable PDFs, documents, and notes. Review the references alongside your results.' },
   { icon: ListChecks, title: 'Practice and recall', text: 'Turn a topic into questions and flashcards. Find the gaps before you move on.' },
   { icon: GitBranch, title: 'Concept maps', text: 'Trace the relationships between ideas and see where each topic fits.' },
   { icon: CalendarDays, title: 'Study planning', text: 'Set your priorities and available time. Build a schedule you can return to and adjust.' },

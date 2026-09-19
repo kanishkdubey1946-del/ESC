@@ -19,7 +19,7 @@ export function AnalyticsChart({ data, label = 'Study activity', color = '#b7a1f
       <div className={`flex min-h-[190px] flex-col items-center justify-center rounded-2xl border border-dashed border-white/[0.08] px-6 text-center ${className}`}>
         <ChartNoAxesCombined size={22} className="mb-3 text-[#77717f]" aria-hidden="true" />
         <p className="text-sm text-[#c9c6d2]">Your progress starts here</p>
-        <p className="mt-1.5 max-w-[240px] text-xs leading-relaxed text-[#96949f]">Complete a study activity to see your {label.toLowerCase()} over time.</p>
+        <p className="mt-1.5 max-w-[240px] text-xs leading-relaxed text-[#96949f]">Complete a study activity to see your {label.toLowerCase()}.</p>
       </div>
     )
   }
