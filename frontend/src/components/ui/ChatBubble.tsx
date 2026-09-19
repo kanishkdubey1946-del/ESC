@@ -45,8 +45,8 @@ export function ChatBubble({ role, text, name, streaming = false, children }: Ch
       className={`group flex w-full gap-3 py-4 ${assistant ? '' : 'justify-end'}`}
     >
       {assistant && (
-        <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-[#211e2a]" aria-hidden="true">
-          <ThinkingOrb state={streaming ? 'composing' : 'listening'} size={20} theme="dark" />
+        <div className="esc-chat-avatar mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.06] bg-[#211e2a]" aria-hidden="true">
+          <ThinkingOrb state={streaming ? 'composing' : 'listening'} size={20} theme="auto" />
         </div>
       )}
       <div className={`min-w-0 ${assistant ? 'w-full max-w-[760px]' : 'max-w-[85%] sm:max-w-[75%]'}`}>
@@ -54,7 +54,7 @@ export function ChatBubble({ role, text, name, streaming = false, children }: Ch
           <span className="text-xs font-medium text-[#c9c6d2]">{name || (assistant ? 'ESC' : 'You')}</span>
           {assistant && <span className="rounded-md bg-[#b7a1f8]/10 px-1.5 py-0.5 text-[9px] font-semibold tracking-wide text-[#b7a1f8]">STUDY COMPANION</span>}
         </div>
-        <div className={assistant ? 'py-0.5' : 'rounded-[20px] rounded-tr-md border border-white/[0.07] bg-[#24242c] px-5 py-3.5'}>
+        <div className={assistant ? 'py-0.5' : 'esc-user-bubble rounded-[20px] rounded-tr-md border border-white/[0.07] bg-[#24242c] px-5 py-3.5'}>
           {text && (
             <div className="prose prose-sm prose-invert max-w-none break-words text-[14px] leading-[1.85] text-[#d5d2de] prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-[#f2f0f7] prose-p:my-2 prose-a:text-[#cbb6ff] prose-a:decoration-[#b7a1f8]/40 prose-a:underline-offset-4 prose-strong:font-semibold prose-strong:text-[#ede9f6] prose-pre:border prose-pre:border-white/10 prose-pre:bg-[#111216] prose-code:text-[#d1bfff] prose-blockquote:border-[#b7a1f8]/40 prose-blockquote:text-[#b7b4c2] prose-th:border-white/10 prose-td:border-white/10">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>

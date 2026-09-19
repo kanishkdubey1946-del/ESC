@@ -7,6 +7,19 @@ import { STUDENT_SPECIALIST_LIBRARY } from '../lib/studentSpecialists';
 
 const BACKEND_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const MAX_RETRIES = 1;
+const ADK_SESSION_STORAGE_KEY = 'esc.adk.session.v1';
+
+function getAdkSessionId() {
+  try {
+    const existing = sessionStorage.getItem(ADK_SESSION_STORAGE_KEY);
+    if (existing) return existing;
+    const created = `web-${crypto.randomUUID()}`;
+    sessionStorage.setItem(ADK_SESSION_STORAGE_KEY, created);
+    return created;
+  } catch {
+    return `web-${crypto.randomUUID()}`;
+  }
+}
 
 type AgentDefinition = { role: string; instructions: string; requiredFields: string[]; temperature: number };
 
@@ -339,6 +352,10 @@ async function callBackendProxy(
   retrievedAt?: string;
   provider?: string;
   model?: string;
+  runtime?: string;
+  agentId?: string;
+  agentName?: string;
+  delegatedAgents?: string[];
 }> {
   const response = await fetch(`${BACKEND_URL}/api/v1/agents/run`, {
     method: 'POST',
@@ -355,6 +372,7 @@ async function callBackendProxy(
       uploads: docsToUploads(options.documents || []),
       evidencePack: options.evidencePack || '',
       sources: options.sources || [],
+      sessionId: getAdkSessionId(),
     }),
   });
 
@@ -391,6 +409,10 @@ async function callBackendProxy(
     retrievedAt: result.retrievedAt,
     provider: result.provider,
     model: result.model,
+    runtime: result.runtime,
+    agentId: result.agentId,
+    agentName: result.agentName,
+    delegatedAgents: result.delegatedAgents,
   };
 }
 
@@ -466,6 +488,11 @@ export async function generateAgentResponse(
       data,
       timestamp: new Date().toISOString(),
       provider: (raw as { provider?: string }).provider,
+      model: raw.model,
+      runtime: raw.runtime,
+      agentId: raw.agentId,
+      agentName: raw.agentName,
+      delegatedAgents: raw.delegatedAgents,
       sources: raw.sources,
       claims,
       researchEvents: raw.researchEvents,

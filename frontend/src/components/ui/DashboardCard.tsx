@@ -17,7 +17,7 @@ export function DashboardCard({ children, title, eyebrow, action, className = ''
       initial={reduceMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className={`relative rounded-[22px] border border-white/[0.07] bg-[#191a20]/90 p-5 shadow-[0_6px_28px_#00000012] backdrop-blur-xl sm:p-6 ${className}`}
+      className={`esc-dashboard-card relative rounded-[22px] border border-white/[0.07] bg-[#191a20]/90 p-5 shadow-[0_6px_28px_#00000012] backdrop-blur-xl sm:p-6 ${className}`}
     >
       {(title || eyebrow || action) && (
         <div className="mb-5 flex items-start justify-between gap-4">

@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { localAuth } from '../lib/localAuth';
+import { setWorkspaceOwner } from '../lib/workspaceMemory';
 
 export interface AuthUser {
   id: string;
@@ -23,10 +24,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const refreshUser = async () => {
     setLoading(true);
     try {
-      if (!localAuth.getToken()) { setUser(null); return; }
-      setUser(await localAuth.getCurrentUser());
+      if (!localAuth.getToken()) { setWorkspaceOwner(null); setUser(null); return; }
+      const currentUser = await localAuth.getCurrentUser();
+      setWorkspaceOwner(currentUser.id);
+      setUser(currentUser);
     } catch {
       await localAuth.signOut();
+      setWorkspaceOwner(null);
       setUser(null);
     } finally {
       setLoading(false);
@@ -39,7 +43,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     refreshUser,
-    signOut: async () => { await localAuth.signOut(); setUser(null); },
+    signOut: async () => {
+      try { await localAuth.signOut(); }
+      finally { setWorkspaceOwner(null); setUser(null); }
+    },
   }), [user, loading]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

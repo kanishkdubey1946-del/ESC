@@ -32,6 +32,8 @@ Updated mastery + new plan version
 
 The application also includes a broader multi-agent workspace with Business, Student, and Playground modes, allowing users to launch specialized agents for research, strategy, planning, explanations, quizzes, flashcards, mind maps, resource discovery, development planning, and more.
 
+The active learning specialists are implemented as a Google ADK team: 12 independent specialist agents plus an ESC Learning Orchestrator that delegates requests, with persistent database-backed ADK sessions and guarded, owner-scoped tools. See `docs/ADK_AGENT_TEAM.md`.
+
 Key Features
 
 🎓 Adaptive Student Companion

@@ -24,14 +24,16 @@ def validate_questions(raw: Any, topic: str, difficulty: str) -> list[dict[str, 
         options = item.get("options")
         correct_index = item.get("correct_index", item.get("correctIndex"))
         explanation = str(item.get("explanation") or "").strip()
-        question_topic = str(item.get("topic") or topic).strip()
+        # Keep assessment history under the requested topic. Model-generated
+        # subtopic labels otherwise split mastery and hide matching resources.
+        question_topic = topic.strip()
         question_difficulty = str(item.get("difficulty") or difficulty).strip().lower()
         if not prompt or not isinstance(options, list) or len(options) != 4:
             raise ValueError("Each question needs a prompt and exactly four options.")
         cleaned_options = [str(option).strip() for option in options]
         if any(not option for option in cleaned_options) or len({option.lower() for option in cleaned_options}) != 4:
             raise ValueError("Question options must be four distinct meaningful choices.")
-        if not isinstance(correct_index, int) or correct_index not in range(4) or not explanation or not question_topic:
+        if type(correct_index) is not int or correct_index not in range(4) or not explanation or not question_topic:
             raise ValueError("Question answer, explanation, topic, or difficulty is invalid.")
         result.append({"prompt": prompt, "options": cleaned_options, "correct_index": correct_index,
                        "explanation": explanation, "topic": question_topic, "difficulty": question_difficulty,
@@ -39,27 +41,6 @@ def validate_questions(raw: Any, topic: str, difficulty: str) -> list[dict[str, 
     if not result:
         raise ValueError("At least one valid question is required.")
     return result
-
-
-def fallback_questions(topic: str, difficulty: str, count: int) -> list[dict[str, Any]]:
-    stems = [
-        ("Which study action best checks your understanding of {topic}?", "Explain the core idea from memory, then check your notes", "Read the heading once", "Skip practice until exam week", "Memorize an unrelated definition"),
-        ("After reviewing {topic}, what is the most useful next step?", "Solve a short problem and explain each step", "Only highlight the chapter", "Switch topics without checking recall", "Wait for an answer key before attempting anything"),
-        ("What does a strong answer about {topic} need first?", "A correct use of its key definitions and relationships", "A longer introduction", "A copied paragraph without reasoning", "A guess based only on keywords"),
-        ("Which error should you investigate after a question on {topic}?", "The exact step or concept that led to the wrong choice", "Only the time on the clock", "The question number", "A classmate's score"),
-    ]
-    questions: list[dict[str, Any]] = []
-    for index in range(count):
-        stem, correct, *wrong = stems[index % len(stems)]
-        options = [correct, *wrong]
-        correct_index = index % 4
-        options = options[-correct_index:] + options[:-correct_index] if correct_index else options
-        questions.append({
-            "prompt": stem.format(topic=topic), "options": options, "correct_index": correct_index,
-            "explanation": f"This original practice item checks a transferable study skill for {topic}; use uploaded or prescribed material for subject-specific review.",
-            "topic": topic, "difficulty": difficulty, "provenance": "original_exam_style_practice",
-        })
-    return questions
 
 
 async def generate_quiz(connection: sqlite3.Connection, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
@@ -90,7 +71,10 @@ async def generate_quiz(connection: sqlite3.Connection, user_id: str, data: dict
             if retry == 1:
                 questions = None
     if questions is None:
-        questions = fallback_questions(data["topic"], data["difficulty"], data["question_count"])
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="A valid subject-specific quiz could not be generated. Please retry shortly. No assessment or mastery score was saved.",
+        )
     return repo.create_quiz(connection, user_id, {
         "title": f"{data['topic']} diagnostic", "subject": data["subject"], "topic": data["topic"],
         "difficulty": data["difficulty"], "duration_minutes": data["duration_minutes"], "source_ids": source_ids,

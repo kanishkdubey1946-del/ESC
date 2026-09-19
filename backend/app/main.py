@@ -2,6 +2,7 @@ import base64
 import hashlib
 import hmac
 import json as json_module
+import logging
 import os
 import secrets
 import sqlite3
@@ -23,15 +24,22 @@ ROOT = Path(__file__).resolve().parents[1]
 load_dotenv(ROOT / ".env")
 
 from app.research_engine import run_research_pipeline, stream_research_events  # noqa: E402
-from app.openai_client import generate_json, is_any_provider_configured, provider_status  # noqa: E402
+from app.openai_client import is_any_provider_configured, provider_status  # noqa: E402
 from app.source_extract import extract_text_from_bytes  # noqa: E402
 from app.db import initialise_database as initialise_esc_database  # noqa: E402
 from app.routes.student import router as student_router  # noqa: E402
 from app.auth import current_user as esc_current_user, login_user, logout_token, register_user  # noqa: E402
 from app.assistant_chat import stream_assistant_chat_events  # noqa: E402
+from app.agents.registry import public_catalog  # noqa: E402
+from app.agents.runtime import (  # noqa: E402
+    AdkUnavailableError,
+    UnknownAgentError,
+    run_adk_agent,
+)
 
 DATABASE_PATH = Path(os.getenv("ESC_DATABASE_PATH", ROOT / "esc.db"))
 SESSION_DURATION = timedelta(hours=8)
+logger = logging.getLogger(__name__)
 
 
 @contextmanager
@@ -221,17 +229,30 @@ class ChatStreamRequest(BaseModel):
 
 
 class AgentRunRequest(BaseModel):
-    agentId: str
-    prompt: str
-    context: str = ""
+    agentId: str = Field(min_length=1, max_length=100)
+    prompt: str = Field(min_length=1, max_length=20_000)
+    context: str = Field(default="", max_length=28_000)
     systemPrompt: str = ""
     temperature: float = 0.4
     enableResearch: bool = True
     forceResearch: bool | None = None
-    uploads: list[UploadSource] = Field(default_factory=list)
-    evidencePack: str = ""
+    uploads: list[UploadSource] = Field(default_factory=list, max_length=20)
+    evidencePack: str = Field(default="", max_length=180_000)
     sources: list[dict[str, Any]] = Field(default_factory=list)
     skipResearch: bool = False
+    sessionId: str | None = Field(default=None, max_length=160)
+
+
+class AgentTeamRunRequest(BaseModel):
+    prompt: str = Field(min_length=1, max_length=20_000)
+    context: str = Field(default="", max_length=28_000)
+    enableResearch: bool = True
+    forceResearch: bool | None = None
+    uploads: list[UploadSource] = Field(default_factory=list, max_length=20)
+    evidencePack: str = Field(default="", max_length=180_000)
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    skipResearch: bool = False
+    sessionId: str | None = Field(default=None, max_length=160)
 
 
 class AgentRunResponse(BaseModel):
@@ -248,22 +269,10 @@ class AgentRunResponse(BaseModel):
     retrievedAt: str | None = None
     provider: str | None = None
     model: str | None = None
-
-
-EVIDENCE_SYSTEM_ADDENDUM = (
-    " ACCURACY RULES: NO SOURCE → NO VERIFIED FACT. "
-    "Never invent statistics, competitors, citations, URLs, market sizes, exam trends, "
-    "customer reviews, government figures, or research papers. "
-    "Use only the EVIDENCE PACK and user-uploaded material for factual claims. "
-    "Cite facts with inline markers like [1] or [2] matching source citation numbers. "
-    "Label estimates as Estimate and list assumptions. "
-    "If evidence is missing, write: Reliable supporting information could not be found for this claim. "
-    "If sources conflict, report both values with citations. "
-    "Separate Evidence from Recommendations. "
-    "Include fields when relevant: dataLimitations (string), sourcesUsed (array of citation numbers), "
-    "evidenceStatus (Verified|Strong Evidence|Moderate Evidence|Limited Evidence|Conflicting Evidence|Estimate|Needs Verification), "
-    "claims (array of {claim, sourceIds, confidence, evidenceType})."
-)
+    runtime: str | None = None
+    agentId: str | None = None
+    agentName: str | None = None
+    delegatedAgents: list[str] = Field(default_factory=list)
 
 
 @app.post("/api/v1/chat/stream")
@@ -317,6 +326,9 @@ async def research_stream(payload: ResearchRunRequest, user: UserResponse = Depe
 
 @app.post("/api/v1/agents/run", response_model=AgentRunResponse)
 async def run_agent(payload: AgentRunRequest, user: UserResponse = Depends(current_user)) -> AgentRunResponse:
+    if sum(len(upload.text) for upload in payload.uploads) > 1_000_000:
+        raise HTTPException(status_code=413, detail="These sources are too large. Select fewer documents for this run.")
+
     sources: list[dict[str, Any]] = list(payload.sources or [])
     research_events: list[dict[str, Any]] = []
     evidence_pack = payload.evidencePack or ""
@@ -365,43 +377,24 @@ async def run_agent(payload: AgentRunRequest, user: UserResponse = Depends(curre
         research_classification = "provided_evidence"
         retrieved_at = datetime.now(timezone.utc).isoformat()
 
-    source_only_instruction = ""
-    if payload.uploads and payload.forceResearch is not True:
-        source_only_instruction = (
-            " SOURCE-ONLY MODE: Answer using only the user's uploaded sources in the EVIDENCE PACK. "
-            "Do not use general knowledge, web knowledge, assumptions, or outside examples. "
-            "Every answerable factual statement must cite an uploaded source. "
-            "If the answer is not contained in the uploaded material, say exactly: "
-            "\"This information is not present in the uploaded source(s).\""
+    # Agent instructions are intentionally backend-owned. The legacy
+    # systemPrompt field is accepted for API compatibility but never trusted.
+    session_id = payload.sessionId or f"default-{payload.agentId}"
+    try:
+        adk_result = await run_adk_agent(
+            agent_id=payload.agentId,
+            user_id=user.id,
+            session_id=session_id,
+            prompt=payload.prompt,
+            uploads=[upload.model_dump() for upload in payload.uploads],
+            evidence_pack=evidence_pack,
+            shared_context=payload.context,
+            source_only=bool(payload.uploads and payload.forceResearch is not True),
         )
-    system_message = (payload.systemPrompt or f"You are ESC's {payload.agentId} agent.") + EVIDENCE_SYSTEM_ADDENDUM + source_only_instruction
-    full_prompt = f"ORIGINAL USER CHALLENGE:\n{payload.prompt}"
-    if payload.context:
-        full_prompt += f"\n\nSHARED WORKSPACE MEMORY / UPSTREAM OUTPUTS:\n{payload.context}"
-    if evidence_pack:
-        full_prompt += f"\n\n{evidence_pack}"
-    if generated_without_live:
-        full_prompt += (
-            "\n\nNOTE: Live external research failed or was incomplete. "
-            "Mark the output as Generated without live external verification. "
-            "Do not invent external facts."
-        )
-    full_prompt += (
-        f"\n\nProduce your {payload.agentId} output now. "
-        "Respond with valid JSON only. Do not use markdown fences. "
-        "Include inline citation markers [n] inside factual text fields."
-    )
-
-    llm = await generate_json(
-        system_message=system_message,
-        user_message=full_prompt,
-        agent_id=payload.agentId,
-        temperature=payload.temperature,
-    )
-    if not llm.get("success"):
+    except (AdkUnavailableError, UnknownAgentError, ValueError) as exc:
         return AgentRunResponse(
             success=False,
-            error=llm.get("error") or "AI generation failed.",
+            error=str(exc),
             sources=sources,
             researchEvents=research_events,
             researchClassification=research_classification,
@@ -410,11 +403,27 @@ async def run_agent(payload: AgentRunRequest, user: UserResponse = Depends(curre
             generatedWithoutLiveResearch=generated_without_live,
             evidencePack=evidence_pack,
             retrievedAt=retrieved_at,
-            provider=llm.get("provider"),
-            model=llm.get("model"),
+            provider="google-adk",
+            runtime="google-adk",
+        )
+    except Exception as exc:  # noqa: BLE001
+        logger.exception("ADK agent run failed agent=%s user=%s", payload.agentId, user.id)
+        return AgentRunResponse(
+            success=False,
+            error="The ADK agent run failed. Check the backend log for the sanitized server-side details.",
+            sources=sources,
+            researchEvents=research_events,
+            researchClassification=research_classification,
+            researchFailed=research_failed,
+            researchError=research_error,
+            generatedWithoutLiveResearch=generated_without_live,
+            evidencePack=evidence_pack,
+            retrievedAt=retrieved_at,
+            provider="google-adk",
+            runtime="google-adk",
         )
 
-    data = llm["data"]
+    data = adk_result.data
     if generated_without_live and isinstance(data, dict):
         data.setdefault("evidenceStatus", "Needs Verification")
         note = "Generated without live external verification."
@@ -438,8 +447,50 @@ async def run_agent(payload: AgentRunRequest, user: UserResponse = Depends(curre
         generatedWithoutLiveResearch=generated_without_live,
         evidencePack=evidence_pack,
         retrievedAt=retrieved_at,
-        provider=llm.get("provider"),
-        model=llm.get("model"),
+        provider=adk_result.provider,
+        model=adk_result.model,
+        runtime="google-adk",
+        agentId=adk_result.agent_id,
+        agentName=adk_result.agent_name,
+        delegatedAgents=adk_result.delegated_agents,
+    )
+
+
+@app.get("/api/v1/agents/catalog")
+def agent_catalog(user: UserResponse = Depends(current_user)) -> dict[str, Any]:
+    del user
+    return {
+        "rootAgent": {
+            "id": "team",
+            "name": "ESC Learning Orchestrator",
+            "role": "Root multi-agent coordinator",
+        },
+        "agents": public_catalog(),
+        "count": len(public_catalog()),
+        "runtime": "google-adk",
+    }
+
+
+@app.post("/api/v1/agents/team/run", response_model=AgentRunResponse)
+async def run_agent_team(
+    payload: AgentTeamRunRequest,
+    user: UserResponse = Depends(current_user),
+) -> AgentRunResponse:
+    """Run the root ADK agent and let it delegate to the best specialist."""
+    return await run_agent(
+        AgentRunRequest(
+            agentId="team",
+            prompt=payload.prompt,
+            context=payload.context,
+            enableResearch=payload.enableResearch,
+            forceResearch=payload.forceResearch,
+            uploads=payload.uploads,
+            evidencePack=payload.evidencePack,
+            sources=payload.sources,
+            skipResearch=payload.skipResearch,
+            sessionId=payload.sessionId,
+        ),
+        user,
     )
 
 

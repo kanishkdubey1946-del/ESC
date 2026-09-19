@@ -37,6 +37,7 @@ async function ensureBackendIsReady(): Promise<void> {
         const response = await fetch(`${apiBaseUrl}/health`, {
           headers: { Accept: 'application/json' },
           cache: 'no-store',
+          signal: AbortSignal.timeout(20_000),
         });
 
         if (response.ok) {
@@ -64,13 +65,17 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   let response: Response;
   try {
     await ensureBackendIsReady();
-    response = await fetch(`${apiBaseUrl}${path}`, { headers: { 'Content-Type': 'application/json', ...options.headers }, ...options });
+    const headers = new Headers(options.headers);
+    if (options.body && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      ...options, headers, signal: options.signal ?? AbortSignal.timeout(30_000),
+    });
   } catch {
     throw new Error('The secure ESC service is waking up or temporarily unavailable. Check your connection and try again in a moment.');
   }
   if (!response.ok) {
     const payload = await response.json().catch(() => null) as { detail?: string } | null;
-    throw new Error(payload?.detail || 'Unable to connect to the local backend.');
+    throw new Error(typeof payload?.detail === 'string' ? payload.detail : 'The request could not be completed. Please try again.');
   }
   return response.status === 204 ? undefined as T : response.json() as Promise<T>;
 }

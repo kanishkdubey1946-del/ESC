@@ -59,7 +59,10 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
 
   useEffect(() => {
     latestRef.current = messages;
-    if (stickRef.current && scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    if (scrollRef.current) {
+      if (!messages.length) scrollRef.current.scrollTop = 0;
+      else if (stickRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
   }, [messages, phase]);
 
   const persist = useCallback((next: AssistantMessage[]) => {
@@ -139,7 +142,7 @@ export default function AssistantChat({ owner, mode, conversationId, displayName
     <div className="esc-chat-main">
       <div className={`esc-chat-scroll ${empty ? 'is-empty' : ''}`} ref={scrollRef} onScroll={() => { const scroll = scrollRef.current; if (scroll) { stickRef.current = scroll.scrollHeight - scroll.scrollTop - scroll.clientHeight < 100; setShowLatest(!stickRef.current); } }}>
         {empty ? <motion.div initial={reducedMotion ? false : { opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} className="esc-chat-welcome">
-          <div className="esc-orb-stage" aria-hidden="true"><div className="esc-orb-halo" /><ThinkingOrb state="listening" size={64} theme="dark" /><span className="esc-orbit-dot" /></div>
+          <div className="esc-orb-stage" aria-hidden="true"><div className="esc-orb-halo" /><ThinkingOrb state="listening" size={64} theme="auto" /><span className="esc-orbit-dot" /></div>
           <div className="esc-welcome-kicker"><span /> YOUR PERSONAL LEARNING COMPANION</div>
           <h1>A little curiosity.<br /><span>A whole new possibility.</span></h1>
           <p>Hey {displayName.split(' ')[0]}, what’s on your mind?<br className="sm:hidden" /> Let’s make it make sense.</p>

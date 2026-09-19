@@ -461,25 +461,26 @@ export function MockTestExperience({ data, sources, onCitationClick, onRegenerat
 export function FlashcardExperience({ data }: Props) {
   const r = asRecord(data);
   const raw = (r.flashcards || r.cards) as unknown;
-  const initial = Array.isArray(raw)
+  const initial = useMemo(() => Array.isArray(raw)
     ? raw.map((c, i) => {
         if (typeof c === 'string') return { front: c, back: '' };
         const o = c && typeof c === 'object' ? c as Record<string, unknown> : {};
         return { front: str(o.front || o.question || o.term || `Card ${i + 1}`), back: str(o.back || o.answer || o.definition) };
       }).filter(c => c.front)
-    : [];
+    : [], [raw]);
 
   const [order, setOrder] = useState<number[]>(() => initial.map((_, i) => i));
   const [i, setI] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [known, setKnown] = useState<Record<number, boolean>>({});
 
-  // Reset order when cards change length
+  // Regeneration can replace a deck without changing its length.
   useEffect(() => {
     setOrder(initial.map((_, idx) => idx));
     setI(0);
     setFlipped(false);
-  }, [initial.length]);
+    setKnown({});
+  }, [initial]);
 
   if (!initial.length) {
     return <TextBlock title="Notes" body={r.executiveSummary || r.detailedReport} />;
@@ -531,8 +532,8 @@ export function FlashcardExperience({ data }: Props) {
 
       <div className="flex flex-wrap justify-center gap-2">
         <button type="button" disabled={i <= 0} onClick={() => { setI(x => x - 1); setFlipped(false); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold disabled:opacity-40">Previous</button>
-        <button type="button" onClick={() => setKnown(k => ({ ...k, [i]: true }))} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">Know</button>
-        <button type="button" onClick={() => setKnown(k => ({ ...k, [i]: false }))} className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white">Review again</button>
+        <button type="button" aria-pressed={Boolean(known[order[i]])} onClick={() => setKnown(k => ({ ...k, [order[i]]: true }))} className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white">Know</button>
+        <button type="button" onClick={() => setKnown(k => ({ ...k, [order[i]]: false }))} className="rounded-lg bg-amber-500 px-3 py-1.5 text-xs font-semibold text-white">Review again</button>
         <button type="button" disabled={i >= cards.length - 1} onClick={() => { setI(x => x + 1); setFlipped(false); }} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold disabled:opacity-40">Next</button>
         <button type="button" onClick={shuffle} className="rounded-lg border border-primary-200 bg-primary-50 px-3 py-1.5 text-xs font-semibold text-primary-800">Shuffle</button>
         <button type="button" onClick={() => downloadFlashcardsPdf(cards)} className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700">PDF</button>

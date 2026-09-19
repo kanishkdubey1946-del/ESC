@@ -57,7 +57,19 @@ def test_mastery_boundaries_and_trends():
     assert repeated["confidence"] == 0.8
 
 
-def test_authenticated_adaptive_flow_persists_and_isolated(client: TestClient):
+def test_authenticated_adaptive_flow_persists_and_isolated(client: TestClient, monkeypatch):
+    from app.services import quiz_service
+
+    async def deterministic_generation(**kwargs):
+        return {"success": True, "data": {"questions": [
+            {"prompt": f"What is the SI unit of electric charge? (item {index + 1})",
+             "options": ["Coulomb", "Newton", "Joule", "Volt"], "correct_index": 0,
+             "explanation": "Electric charge is measured in coulombs.", "topic": "Electric charge"}
+            for index in range(5)
+        ]}}
+
+    monkeypatch.setattr(quiz_service, "is_any_provider_configured", lambda: True)
+    monkeypatch.setattr(quiz_service, "generate_json", deterministic_generation)
     student_a = auth_headers(client, "a@example.com", "Student A")
     student_b = auth_headers(client, "b@example.com", "Student B")
     assert client.put("/api/v1/me/profile", headers=student_a, json=profile_payload()).status_code == 200
@@ -120,3 +132,45 @@ def test_authenticated_adaptive_flow_persists_and_isolated(client: TestClient):
     history = client.get("/api/v1/me/study-plans/history", headers=student_a).json()["plans"]
     assert len(history) == 2 and any(item["status"] == "superseded" for item in history)
     assert any(task["completed"] for plan in history for task in plan["tasks"])  # persisted after a refresh request
+
+
+@pytest.mark.parametrize("configured", [False, True])
+def test_failed_quiz_never_creates_fake_assessment(client: TestClient, monkeypatch, configured):
+    from app.services import quiz_service
+
+    async def unavailable(**kwargs):
+        return {"success": False, "error": "unavailable"}
+
+    monkeypatch.setattr(quiz_service, "is_any_provider_configured", lambda: configured)
+    monkeypatch.setattr(quiz_service, "generate_json", unavailable)
+    headers = auth_headers(client, "unavailable@example.com")
+    response = client.post("/api/v1/me/quizzes/generate", headers=headers, json={
+        "subject": "Physics", "topic": "Electrostatics", "difficulty": "medium",
+        "question_count": 5, "duration_minutes": 10, "source_ids": [],
+    })
+    assert response.status_code == 503
+    with db.database() as connection:
+        assert connection.execute("SELECT COUNT(*) FROM quizzes").fetchone()[0] == 0
+        assert connection.execute("SELECT COUNT(*) FROM mastery_states").fetchone()[0] == 0
+
+
+def test_quiz_validation_rejects_boolean_answer_index():
+    from app.services.quiz_service import validate_questions
+    with pytest.raises(ValueError):
+        validate_questions([{"prompt": "Unit of charge?", "options": ["C", "N", "J", "V"],
+                             "correct_index": True, "explanation": "Coulomb"}], "Charge", "medium")
+
+
+def test_auth_login_logout_and_text_extraction(client: TestClient):
+    headers = auth_headers(client, "roundtrip@example.com")
+    upload = client.post("/api/v1/sources/extract", headers=headers,
+                         files={"file": ("notes.txt", b"Charge is measured in coulombs.", "text/plain")})
+    assert upload.status_code == 200, upload.text
+    assert "coulombs" in upload.json()["text"]
+    assert client.post("/api/auth/login", json={"email": "roundtrip@example.com", "password": "incorrect"}).status_code == 401
+    login = client.post("/api/auth/login", json={"email": "roundtrip@example.com", "password": "correct-horse-battery"})
+    assert login.status_code == 200
+    active = {"Authorization": f"Bearer {login.json()['token']}"}
+    assert client.get("/api/auth/me", headers=active).status_code == 200
+    assert client.post("/api/auth/logout", headers=active).status_code == 204
+    assert client.get("/api/auth/me", headers=active).status_code == 401

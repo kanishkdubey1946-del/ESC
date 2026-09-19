@@ -22,6 +22,25 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
   // Shared state
   const [state, setState] = useState<ProcessState>('idle');
   const [error, setError] = useState('');
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const frame = requestAnimationFrame(() => dialogRef.current?.focus());
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') { event.preventDefault(); closeRef.current(); }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const controls = Array.from(dialogRef.current.querySelectorAll<HTMLElement>('button:not(:disabled), input:not(:disabled), textarea:not(:disabled), a[href], [tabindex="0"]')).filter(el => el.offsetParent !== null);
+      const first = controls[0], last = controls[controls.length - 1];
+      if (!first) { event.preventDefault(); return; }
+      if (event.shiftKey && (document.activeElement === first || document.activeElement === dialogRef.current)) { event.preventDefault(); last.focus(); }
+      else if (!event.shiftKey && (document.activeElement === last || document.activeElement === dialogRef.current)) { event.preventDefault(); first.focus(); }
+    };
+    document.addEventListener('keydown', onKey);
+    return () => { cancelAnimationFrame(frame); document.removeEventListener('keydown', onKey); previous?.focus(); };
+  }, [isOpen]);
 
   // Upload state
   const [_file, setFile] = useState<File | null>(null);
@@ -68,6 +87,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
       onClose();
     }, 1200);
   };
+  closeRef.current = handleClose;
 
   // ─── File Upload Logic ────────────────────────────────────────────────
   const processFile = async (uploadedFile: File) => {
@@ -110,6 +130,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
           method: 'POST',
           headers: authenticatedHeaders(),
           body: form,
+          signal: AbortSignal.timeout(60_000),
         });
         const result = await response.json();
         if (result.success && result.text) {
@@ -174,7 +195,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
       const testUrl = raw.startsWith('http') ? raw : `https://${raw}`;
       const parsed = new URL(testUrl);
       const host = parsed.hostname.replace(/^www\./, '');
-      if (!['youtube.com', 'youtu.be', 'm.youtube.com'].includes(host) && !host.endsWith('youtube.com')) {
+      if (host !== 'youtube.com' && host !== 'youtu.be' && !host.endsWith('.youtube.com')) {
         throw new Error('Please enter a valid YouTube URL.');
       }
       setState('processing');
@@ -249,7 +270,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
       setState('ready');
       handleSuccess();
     } catch (err) {
-      setError('Failed to save text source.');
+      setError(err instanceof Error ? err.message : 'Failed to save text source. Browser storage may be full.');
       setState('error');
     }
   };
@@ -260,22 +281,23 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
   return (
     <div className="fixed inset-0 z-[100] grid place-items-center bg-black/40 p-4 backdrop-blur-sm" onMouseDown={handleClose}>
       <motion.div 
+        ref={dialogRef} role="dialog" aria-modal="true" aria-label="Add your sources" tabIndex={-1}
         initial={{ opacity: 0, scale: 0.95, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         onMouseDown={e => e.stopPropagation()}
-        className="w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl"
+        className="w-full max-w-xl max-h-[90dvh] overflow-y-auto rounded-2xl border border-slate-200 bg-white shadow-xl"
       >
         <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
           <div className="flex items-center gap-3">
             {currentView !== 'menu' && !isWorking && state !== 'ready' && (
-              <button onClick={() => { setCurrentView('menu'); setState('idle'); setError(''); }} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+              <button aria-label="Back to source options" onClick={() => { setCurrentView('menu'); setState('idle'); setError(''); }} className="rounded-md p-3 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
                 <ArrowLeft className="h-4 w-4" />
               </button>
             )}
             <h2 className="text-[16px] font-semibold text-slate-900">Add your sources</h2>
           </div>
-          <button onClick={handleClose} disabled={isWorking} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50">
+          <button aria-label="Close sources" onClick={handleClose} disabled={isWorking} className="rounded-md p-3 text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:opacity-50">
             <X className="h-5 w-5" />
           </button>
         </div>
@@ -459,6 +481,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
                     <label className="text-sm font-medium text-slate-700">Source title <span className="text-slate-400 font-normal">(optional)</span></label>
                     <input
                       value={textTitle}
+                      aria-label="Source title"
                       onChange={e => setTextTitle(e.target.value)}
                       placeholder="e.g., Meeting Notes"
                       className="mt-1 w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2 text-sm outline-none focus:border-primary-400 focus:bg-white focus:ring-2 focus:ring-primary-100 transition"
@@ -468,6 +491,7 @@ export default function SourceSelectionModal({ isOpen, onClose, onSuccess, initi
                     <label className="text-sm font-medium text-slate-700">Paste your text here</label>
                     <textarea
                       value={textContent}
+                      aria-label="Source text"
                       onChange={e => setTextContent(e.target.value)}
                       placeholder="Paste text content..."
                       rows={5}

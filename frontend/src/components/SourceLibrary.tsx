@@ -207,7 +207,7 @@ export default function SourceLibrary() {
               <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] font-medium text-slate-500">
                 <span>Sources found: {stats.sourcesFound || webSources.length}</span>
                 <span>Sources used: {stats.sourcesUsed || webSources.length}</span>
-                <span>Cross-checked claims: {stats.crossCheckedClaims}</span>
+                <span>Evidence snippets: {stats.crossCheckedClaims}</span>
               </div>
             )}
 
