@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { SourceRecord } from '../../types/sources';
 import CitedText from '../research/CitedText';
+import MathText from '../ui/MathText';
 import {
   downloadAnswerKeyPdf,
   downloadFlashcardsCsv,
@@ -306,7 +307,7 @@ export function MockTestExperience({ data, sources, onCitationClick, onRegenerat
           ) : (
             <p className="text-[11px] font-semibold text-slate-500">Original practice question generated in exam style</p>
           )}
-          <p className="mt-2 text-sm font-semibold text-slate-900">{rq.text}</p>
+          <p className="mt-2 text-sm font-semibold text-slate-900"><MathText text={rq.text} /></p>
           {rq.difficulty && <p className="mt-1 text-[11px] text-slate-500">Difficulty: {rq.difficulty}</p>}
           <ul className="mt-4 space-y-2">
             {rq.options.map((opt, i) => {
@@ -321,7 +322,7 @@ export function MockTestExperience({ data, sources, onCitationClick, onRegenerat
                         : 'border-slate-200 bg-slate-50 text-slate-700'
                   }`}
                 >
-                  {opt}
+                  <MathText text={opt} />
                   {isCorrect && <span className="ml-2 text-[11px] font-bold">Correct</span>}
                   {isUser && !isCorrect && <span className="ml-2 text-[11px] font-bold">Your answer</span>}
                 </li>
@@ -380,7 +381,7 @@ export function MockTestExperience({ data, sources, onCitationClick, onRegenerat
       </div>
 
       <article className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-sm font-semibold leading-relaxed text-slate-900 whitespace-pre-wrap">{q.text}</p>
+        <p className="text-sm font-semibold leading-relaxed text-slate-900 whitespace-pre-wrap"><MathText text={q.text} /></p>
         {q.topic && <p className="mt-1 text-[11px] text-slate-500">Topic: {q.topic}</p>}
         <ul className="mt-4 space-y-2">
           {q.options.map((opt, i) => (
@@ -395,7 +396,7 @@ export function MockTestExperience({ data, sources, onCitationClick, onRegenerat
                 }`}
               >
                 <span className="mr-2 font-bold text-slate-400">{String.fromCharCode(65 + i)}.</span>
-                {opt}
+                <MathText text={opt} />
               </button>
             </li>
           ))}
