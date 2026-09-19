@@ -27,7 +27,7 @@ const TAG_TONES = [
 export default function AgentPlayground({ mode, onQuickLaunch }: AgentPlaygroundProps) {
   const [query, setQuery] = useState('');
   const reduceMotion = useReducedMotion();
-  const isLearningMode = mode === 'student' || mode === 'playground';
+  const isPlayground = mode === 'playground';
   const allSpecialists = useMemo(() => marketplaceSpecialistsForMode(mode), [mode]);
   const specialists = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -40,10 +40,10 @@ export default function AgentPlayground({ mode, onQuickLaunch }: AgentPlayground
     ].join(' ').toLowerCase().includes(term));
   }, [allSpecialists, query]);
 
-  const heading = isLearningMode ? 'A specialist for every aha moment.' : 'Meet your specialist team.';
-  const subheading = isLearningMode
-    ? 'Understand the difficult bits. Find your next step. Your learning team is one conversation away.'
-    : 'Choose a focused AI expert for a dedicated conversation.';
+  const heading = isPlayground ? 'Experiment with your specialist team.' : 'A specialist for every aha moment.';
+  const subheading = isPlayground
+    ? 'Try focused AI roles in an isolated sandbox. Playground conversations stay separate from your Student workspace.'
+    : 'Understand the difficult bits. Find your next step. Your learning team is one conversation away.';
 
   return (
     <div className="esc-specialist-page flex h-full min-h-0 flex-1 overflow-y-auto bg-[#101114] p-5 text-[#f2f0f7] sm:p-8 lg:p-10">
@@ -51,7 +51,7 @@ export default function AgentPlayground({ mode, onQuickLaunch }: AgentPlayground
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div className="max-w-[580px]">
             <p className="flex items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#b7a1f8]">
-              <Sparkles size={13} aria-hidden="true" /> Your AI study team
+              <Sparkles size={13} aria-hidden="true" /> {isPlayground ? 'Specialist playground' : 'Your AI study team'}
             </p>
             <h1 className="mt-3 text-[30px] font-medium leading-tight tracking-[-0.04em] sm:text-[36px]">{heading}</h1>
             <p className="mt-3 max-w-lg text-[13px] leading-relaxed text-[#96949f]">{subheading}</p>
@@ -60,7 +60,7 @@ export default function AgentPlayground({ mode, onQuickLaunch }: AgentPlayground
             <ThinkingOrb state="listening" size={64} theme="auto" />
             <div>
               <p className="text-xs font-medium text-[#d6d0e4]">{allSpecialists.length} focused specialists</p>
-              <p className="mt-1 text-[11px] text-[#96949f]">One connected study space</p>
+              <p className="mt-1 text-[11px] text-[#96949f]">{isPlayground ? 'A separate space to experiment' : 'One connected study space'}</p>
             </div>
           </div>
         </div>
