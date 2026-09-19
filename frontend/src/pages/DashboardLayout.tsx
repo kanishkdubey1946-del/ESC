@@ -45,6 +45,18 @@ export default function DashboardLayout() {
   const changeView = useCallback((next: WorkspaceView) => { setParams({ mode, view: next }); setMobileNav(false); }, [mode, setParams]);
   const newChat = useCallback(() => { setConversationId(crypto.randomUUID()); setInitialPrompt(''); changeView('chat'); }, [changeView]);
   const consumePrompt = useCallback(() => setInitialPrompt(''), []);
+  const changeMode = useCallback((next: WorkspaceMode) => {
+    setModeOpen(false);
+    if (next === mode) return;
+
+    // A mode choice is a destination, not just a label change. Taking users to
+    // each mode's home makes the switch immediately visible and keeps Student
+    // dashboard state out of the Playground experience.
+    const nextView: WorkspaceView = next === 'playground' ? 'specialists' : 'overview';
+    setInitialPrompt('');
+    setConversationId(readConversations(owner, next)[0]?.id || crypto.randomUUID());
+    setParams({ mode: next, view: nextView });
+  }, [mode, owner, setParams]);
 
   useEffect(() => {
     const refresh = () => setRecent(readConversations(owner, mode));
@@ -102,7 +114,29 @@ export default function DashboardLayout() {
         <div className="flex min-w-0 items-center gap-3"><button className="esc-icon-button lg:hidden" aria-label="Open navigation" onClick={() => setMobileNav(true)}><Menu size={20} /></button><BrandMark className="esc-mobile-brand lg:hidden" /><span className="hidden text-[12px] text-[#64626e] sm:inline">My workspace</span><span className="hidden text-[#45434c] sm:inline">/</span><h1 className="truncate text-[12px] font-medium text-[#d5d0df]">{titles[view]}</h1></div>
         <div className="flex items-center gap-3 sm:gap-5">
           <span className="hidden items-center gap-1.5 text-[10px] tracking-wide text-[#9690a2] xl:flex"><span className="h-1 w-1 rounded-full bg-[#c4dca5]" /> YOUR SPACE TO GROW</span>
-          <div className="relative"><button className="esc-mode-button" aria-expanded={modeOpen} onClick={() => setModeOpen(!modeOpen)}>{mode === 'student' ? 'Student' : 'Playground'} <ChevronDown size={12} /></button>{modeOpen && <div className="esc-mode-menu">{(['student', 'playground'] as const).map(next => <button key={next} onClick={() => { setParams({ mode: next, view }); setConversationId(readConversations(owner, next)[0]?.id || crypto.randomUUID()); setModeOpen(false); }}>{next === 'student' ? 'Student workspace' : 'Playground'}</button>)}</div>}</div>
+          <div className="relative">
+            <button
+              className="esc-mode-button"
+              aria-expanded={modeOpen}
+              aria-haspopup="menu"
+              onClick={() => setModeOpen(open => !open)}
+            >
+              {mode === 'student' ? 'Student' : 'Playground'} <ChevronDown size={12} />
+            </button>
+            {modeOpen && <div className="esc-mode-menu" role="menu" aria-label="Choose workspace mode">
+              {(['student', 'playground'] as const).map(next => <button
+                key={next}
+                type="button"
+                role="menuitemradio"
+                aria-checked={mode === next}
+                className={mode === next ? 'is-active' : undefined}
+                onClick={() => changeMode(next)}
+              >
+                <span>{next === 'student' ? 'Student workspace' : 'Playground'}</span>
+                {mode === next && <span aria-hidden="true" className="esc-mode-check">✓</span>}
+              </button>)}
+            </div>}
+          </div>
           <ThemeToggle />
           <button className="esc-icon-button" aria-label="Workspace settings" onClick={() => setSettingsOpen(true)}><Settings2 size={16} /></button>
         </div>
