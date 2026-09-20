@@ -3,7 +3,10 @@ import type { ReactNode } from 'react'
 import { motion, useReducedMotion } from 'framer-motion'
 import { Check, Copy } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
+import rehypeKatex from 'rehype-katex'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import 'katex/dist/katex.min.css'
 import { AIStatus } from './AIStatus'
 import { ThinkingOrb } from './thinking-orbs'
 
@@ -57,7 +60,12 @@ export function ChatBubble({ role, text, name, streaming = false, children }: Ch
         <div className={assistant ? 'py-0.5' : 'esc-user-bubble rounded-[20px] rounded-tr-md border border-white/[0.07] bg-[#24242c] px-5 py-3.5'}>
           {text && (
             <div className="prose prose-sm prose-invert max-w-none break-words text-[14px] leading-[1.85] text-[#d5d2de] prose-headings:font-semibold prose-headings:tracking-tight prose-headings:text-[#f2f0f7] prose-p:my-2 prose-a:text-[#cbb6ff] prose-a:decoration-[#b7a1f8]/40 prose-a:underline-offset-4 prose-strong:font-semibold prose-strong:text-[#ede9f6] prose-pre:border prose-pre:border-white/10 prose-pre:bg-[#111216] prose-code:text-[#d1bfff] prose-blockquote:border-[#b7a1f8]/40 prose-blockquote:text-[#b7b4c2] prose-th:border-white/10 prose-td:border-white/10">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>{text}</ReactMarkdown>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm, remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+              >
+                {text}
+              </ReactMarkdown>
             </div>
           )}
           {streaming && <AIStatus state="composing" label={text ? 'Still writing' : 'Putting your answer together'} compact className="mt-3" />}
