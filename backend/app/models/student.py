@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Literal
 
-from pydantic import BaseModel, Field, HttpUrl, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class ProfileUpsert(BaseModel):
@@ -36,6 +36,31 @@ class ProfileUpsert(BaseModel):
         if any(minutes < 0 or minutes > 1440 for minutes in values.values()):
             raise ValueError("Daily availability must be between 0 and 1440 minutes.")
         return {str(day).strip().lower(): int(minutes) for day, minutes in values.items()}
+
+
+class StudentProfileUpdate(BaseModel):
+    """Editable account profile fields; all fields are optional for PATCH-like PUTs."""
+
+    model_config = ConfigDict(populate_by_name=True)
+
+    class_name: str | None = Field(default=None, alias="class", max_length=80)
+    school_name: str | None = Field(default=None, max_length=160)
+    exam_preparing: str | None = Field(default=None, max_length=160)
+    subjects: list[str] | None = Field(default=None, max_length=20)
+    study_progress: float | None = Field(default=None, ge=0, le=100)
+
+    @field_validator("subjects")
+    @classmethod
+    def clean_optional_subjects(cls, values: list[str] | None) -> list[str] | None:
+        if values is None:
+            return values
+        return list(dict.fromkeys(value.strip() for value in values if value.strip()))
+
+
+class StudentNoteCreate(BaseModel):
+    title: str = Field(min_length=1, max_length=240)
+    subject: str = Field(default="", max_length=120)
+    resource_link: str | None = Field(default=None, max_length=2_000)
 
 
 class SourceCreate(BaseModel):

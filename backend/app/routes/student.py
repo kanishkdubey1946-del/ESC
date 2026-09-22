@@ -1,8 +1,12 @@
 from __future__ import annotations
 
 import json
+import mimetypes
+import secrets
+from pathlib import Path
 
-from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, HTTPException, Query, UploadFile, status
+from fastapi.responses import FileResponse
 
 from app.auth import UserResponse, current_user
 from app.db import database
@@ -15,6 +19,8 @@ from app.models.student import (
     QuizGenerateRequest,
     ResourceCreate,
     SourceCreate,
+    StudentNoteCreate,
+    StudentProfileUpdate,
 )
 from app.repositories import student_repository as repo
 from app.services import diagnosis_service, plan_service, quiz_service
@@ -22,6 +28,25 @@ from app.source_extract import extract_text_from_bytes
 
 
 router = APIRouter(prefix="/api/v1/me", tags=["ESC learning memory"])
+UPLOAD_ROOT = Path(__file__).resolve().parents[2] / "profile_uploads"
+MAX_PROFILE_UPLOAD_BYTES = 5 * 1024 * 1024
+
+
+async def persist_upload(file: UploadFile, user_id: str, allowed_types: set[str]) -> tuple[str, str, str]:
+    """Persist a bounded, user-scoped upload. Downloads are always auth-checked."""
+    content_type = (file.content_type or "").lower()
+    if content_type not in allowed_types:
+        raise HTTPException(status_code=415, detail="Only PDF, PNG, JPEG, or WebP files are supported.")
+    raw = await file.read(MAX_PROFILE_UPLOAD_BYTES + 1)
+    if len(raw) > MAX_PROFILE_UPLOAD_BYTES:
+        raise HTTPException(status_code=413, detail="Files must be 5 MB or smaller.")
+    suffix = mimetypes.guess_extension(content_type) or ".bin"
+    filename = f"{secrets.token_urlsafe(18)}{suffix}"
+    directory = UPLOAD_ROOT / user_id
+    directory.mkdir(parents=True, exist_ok=True)
+    path = directory / filename
+    path.write_bytes(raw)
+    return str(path), file.filename or f"upload{suffix}", content_type
 
 
 def profile_data(payload: ProfileUpsert) -> dict:
@@ -40,6 +65,82 @@ def get_profile(user: UserResponse = Depends(current_user)) -> dict:
 def put_profile(payload: ProfileUpsert, user: UserResponse = Depends(current_user)) -> dict:
     with database() as connection:
         return {"profile": repo.upsert_profile(connection, user.id, profile_data(payload))}
+
+
+@router.get("/profile/details")
+def get_profile_details(user: UserResponse = Depends(current_user)) -> dict:
+    """Account profile plus lightweight agent-owned activity aggregates."""
+    with database() as connection:
+        profile = repo.get_profile(connection, user.id)
+        return {
+            "profile": profile,
+            "user": {"id": user.id, "name": user.name, "email": user.email},
+            "activity": repo.activity_stats(connection, user.id),
+        }
+
+
+@router.put("/profile/details")
+def put_profile_details(payload: StudentProfileUpdate, user: UserResponse = Depends(current_user)) -> dict:
+    with database() as connection:
+        profile = repo.update_student_profile(connection, user.id, payload.model_dump(by_alias=True, exclude_unset=True))
+        return {"profile": profile, "activity": repo.activity_stats(connection, user.id)}
+
+
+@router.post("/profile/image")
+async def post_profile_image(file: UploadFile = File(...), user: UserResponse = Depends(current_user)) -> dict:
+    path, _filename, _content_type = await persist_upload(file, user.id, {"image/jpeg", "image/png", "image/webp"})
+    with database() as connection:
+        profile = repo.set_profile_image(connection, user.id, "/api/v1/me/profile/image", path)
+    # The image URL points to an authenticated endpoint; it is never a public disk path.
+    return {"profile": profile, "imageUrl": "/api/v1/me/profile/image"}
+
+
+@router.get("/profile/image")
+def get_profile_image(user: UserResponse = Depends(current_user)) -> FileResponse:
+    with database() as connection:
+        profile = repo.get_profile(connection, user.id)
+        image_row = connection.execute("SELECT profile_image_key FROM student_profiles WHERE user_id = ?", (user.id,)).fetchone()
+    if not profile or not profile.get("profileImageUrl"):
+        raise HTTPException(status_code=404, detail="Profile image not found.")
+    image_path = Path(image_row["profile_image_key"] or "") if image_row else Path()
+    if not image_path.is_file() or UPLOAD_ROOT not in image_path.parents:
+        raise HTTPException(status_code=404, detail="Profile image not found.")
+    return FileResponse(image_path)
+
+
+@router.post("/notes", status_code=status.HTTP_201_CREATED)
+async def post_student_note(
+    title: str = Form(...), subject: str = Form(""), resource_link: str | None = Form(None),
+    file: UploadFile | None = File(None), user: UserResponse = Depends(current_user),
+) -> dict:
+    payload = StudentNoteCreate(title=title, subject=subject, resource_link=resource_link)
+    if not file and not payload.resource_link:
+        raise HTTPException(status_code=422, detail="Add a PDF/image file or an external resource link.")
+    data = payload.model_dump()
+    if file:
+        path, filename, content_type = await persist_upload(file, user.id, {"application/pdf", "image/jpeg", "image/png", "image/webp"})
+        data.update({"file_path": path, "file_name": filename, "file_content_type": content_type})
+    with database() as connection:
+        return {"note": repo.create_student_note(connection, user.id, data)}
+
+
+@router.get("/notes")
+def get_student_notes(offset: int = Query(0, ge=0), limit: int = Query(20, ge=1, le=50), user: UserResponse = Depends(current_user)) -> dict:
+    with database() as connection:
+        return {"notes": repo.list_student_notes(connection, user.id, offset, limit), "activity": repo.activity_stats(connection, user.id)}
+
+
+@router.get("/profile/files/{note_id}")
+def get_student_note_file(note_id: str, user: UserResponse = Depends(current_user)) -> FileResponse:
+    with database() as connection:
+        note = repo.get_student_note(connection, user.id, note_id)
+        if not note:
+            raise HTTPException(status_code=404, detail="Note not found.")
+        row = connection.execute("SELECT file_path FROM student_notes WHERE id = ? AND owner_id = ?", (note_id, user.id)).fetchone()
+    path = Path(row["file_path"]) if row and row["file_path"] else None
+    if not path or not path.is_file() or UPLOAD_ROOT not in path.parents:
+        raise HTTPException(status_code=404, detail="Note file not found.")
+    return FileResponse(path, filename=note["fileName"])
 
 
 @router.get("/memory")

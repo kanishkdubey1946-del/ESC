@@ -7,6 +7,7 @@ import { AIStatus } from './components/ui/AIStatus';
 
 const LandingPage = lazy(() => import('./pages/LandingPage'));
 const DashboardLayout = lazy(() => import('./pages/DashboardLayout'));
+const ProfilePage = lazy(() => import('./pages/ProfilePage'));
 const LunarGravityDemo = lazy(() => import('./components/ui/lunar-gravity-card-demo'));
 
 function App() {
@@ -24,6 +25,7 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/demo/lunar-gravity" element={<LunarGravityDemo />} />
           <Route path="/dashboard" element={<RequireAuth><DashboardLayout /></RequireAuth>} />
+          <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>

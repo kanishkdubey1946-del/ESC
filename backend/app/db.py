@@ -218,6 +218,36 @@ MIGRATIONS: tuple[tuple[str, str], ...] = (
         CREATE INDEX IF NOT EXISTS idx_plan_tasks_owner ON plan_tasks(owner_id, completed, task_date);
         """,
     ),
+    # Profile additions deliberately extend the existing student record instead
+    # of creating a second user identity or profile table.
+    (
+        "003_student_profile_module",
+        """
+        ALTER TABLE student_profiles ADD COLUMN class_name TEXT NOT NULL DEFAULT '';
+        ALTER TABLE student_profiles ADD COLUMN school_name TEXT NOT NULL DEFAULT '';
+        ALTER TABLE student_profiles ADD COLUMN exam_preparing TEXT NOT NULL DEFAULT '';
+        ALTER TABLE student_profiles ADD COLUMN profile_image_url TEXT;
+        ALTER TABLE student_profiles ADD COLUMN study_progress REAL NOT NULL DEFAULT 0;
+        CREATE TABLE IF NOT EXISTS student_notes (
+            id TEXT PRIMARY KEY,
+            owner_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+            title TEXT NOT NULL,
+            subject TEXT NOT NULL DEFAULT '',
+            file_name TEXT,
+            file_path TEXT,
+            file_content_type TEXT,
+            resource_link TEXT,
+            created_at TEXT NOT NULL
+        );
+        CREATE INDEX IF NOT EXISTS idx_student_notes_owner ON student_notes(owner_id, created_at DESC);
+        """,
+    ),
+    (
+        "004_profile_image_key",
+        """
+        ALTER TABLE student_profiles ADD COLUMN profile_image_key TEXT;
+        """,
+    ),
 )
 
 

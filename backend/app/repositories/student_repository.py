@@ -58,6 +58,8 @@ def get_profile(connection: sqlite3.Connection, user_id: str) -> dict[str, Any] 
         "goal": row["goal"], "deadline": row["deadline"], "weeklyHours": row["weekly_hours"],
         "dailyAvailability": load(row["daily_availability_json"], {}),
         "preferredSessionMinutes": row["preferred_session_minutes"], "weakTopics": load(row["weak_topics_json"], []),
+        "class": row["class_name"], "schoolName": row["school_name"], "examPreparing": row["exam_preparing"],
+        "profileImageUrl": row["profile_image_url"], "studyProgress": row["study_progress"],
         "createdAt": row["created_at"], "updatedAt": row["updated_at"],
     }
 
@@ -81,6 +83,79 @@ def upsert_profile(connection: sqlite3.Connection, user_id: str, data: dict[str,
     result = get_profile(connection, user_id)
     assert result is not None
     return result
+
+
+def update_student_profile(connection: sqlite3.Connection, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    """Update only the new account-profile fields without overwriting learning setup."""
+    profile = get_profile(connection, user_id)
+    if not profile:
+        # The learning setup remains the source of grade/curriculum/goal. A small
+        # placeholder lets students complete their profile before onboarding.
+        timestamp = utc_now().isoformat()
+        connection.execute(
+            """INSERT INTO student_profiles (user_id, grade, curriculum, subjects_json, goal, deadline,
+            weekly_hours, daily_availability_json, preferred_session_minutes, weak_topics_json, created_at, updated_at)
+            VALUES (?, '', '', '[]', '', NULL, 0, '{}', 45, '[]', ?, ?)""",
+            (user_id, timestamp, timestamp),
+        )
+        profile = get_profile(connection, user_id)
+        assert profile
+    columns = {"class_name": "class", "school_name": "schoolName", "exam_preparing": "examPreparing",
+               "study_progress": "studyProgress"}
+    assignments: list[str] = []
+    values: list[Any] = []
+    for column, key in columns.items():
+        if key in data:
+            assignments.append(f"{column} = ?")
+            values.append(data[key])
+    if "subjects" in data:
+        assignments.append("subjects_json = ?")
+        values.append(dump(data["subjects"]))
+    if assignments:
+        values.extend([utc_now().isoformat(), user_id])
+        connection.execute(f"UPDATE student_profiles SET {', '.join(assignments)}, updated_at = ? WHERE user_id = ?", values)
+    result = get_profile(connection, user_id)
+    assert result
+    return result
+
+
+def set_profile_image(connection: sqlite3.Connection, user_id: str, image_url: str, image_key: str) -> dict[str, Any]:
+    update_student_profile(connection, user_id, {})
+    connection.execute("UPDATE student_profiles SET profile_image_url = ?, profile_image_key = ?, updated_at = ? WHERE user_id = ?", (image_url, image_key, utc_now().isoformat(), user_id))
+    result = get_profile(connection, user_id)
+    assert result
+    return result
+
+
+def create_student_note(connection: sqlite3.Connection, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
+    note_id = new_id("note")
+    created_at = utc_now().isoformat()
+    connection.execute("""INSERT INTO student_notes (id, owner_id, title, subject, file_name, file_path,
+        file_content_type, resource_link, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (note_id, user_id, data["title"], data.get("subject", ""), data.get("file_name"), data.get("file_path"),
+         data.get("file_content_type"), data.get("resource_link"), created_at))
+    return get_student_note(connection, user_id, note_id)  # type: ignore[return-value]
+
+
+def get_student_note(connection: sqlite3.Connection, user_id: str, note_id: str) -> dict[str, Any] | None:
+    row = connection.execute("SELECT * FROM student_notes WHERE id = ? AND owner_id = ?", (note_id, user_id)).fetchone()
+    if not row:
+        return None
+    return {"id": row["id"], "title": row["title"], "subject": row["subject"], "fileName": row["file_name"],
+            "fileUrl": f"/api/v1/me/profile/files/{row['id']}" if row["file_path"] else None,
+            "resourceLink": row["resource_link"], "createdAt": row["created_at"]}
+
+
+def list_student_notes(connection: sqlite3.Connection, user_id: str, offset: int = 0, limit: int = 20) -> list[dict[str, Any]]:
+    rows = connection.execute("SELECT * FROM student_notes WHERE owner_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?", (user_id, limit, offset)).fetchall()
+    return [note for row in rows if (note := get_student_note(connection, user_id, row["id"]))]
+
+
+def activity_stats(connection: sqlite3.Connection, user_id: str) -> dict[str, int]:
+    completed = connection.execute("SELECT COUNT(*) AS count FROM plan_tasks WHERE owner_id = ? AND completed = 1", (user_id,)).fetchone()["count"]
+    notes = connection.execute("SELECT COUNT(*) AS count FROM student_notes WHERE owner_id = ?", (user_id,)).fetchone()["count"]
+    resources = connection.execute("SELECT COUNT(*) AS count FROM learning_resources WHERE owner_id = ?", (user_id,)).fetchone()["count"]
+    return {"assignmentsCompleted": completed, "notesUploaded": notes, "resourcesAdded": resources}
 
 
 def create_source(connection: sqlite3.Connection, user_id: str, data: dict[str, Any]) -> dict[str, Any]:
